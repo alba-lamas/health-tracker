@@ -98,6 +98,150 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
     );
   }
 
+  Future<void> _editarUsuario(User user) async {
+    final controlador = TextEditingController(text: user.name);
+    String? photoPath = user.photoPath;
+
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Editar Perfil'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controlador,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (photoPath != null)
+                    Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: photoPath != null 
+                            ? FileImage(File(photoPath!))  // Usamos ! para asegurar que no es null
+                            : null,  // Fallback si photoPath es null
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            setState(() {
+                              photoPath = null;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.camera_alt),
+                    label: Text(photoPath == null ? 'Añadir Foto' : 'Cambiar Foto'),
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                      
+                      if (image != null) {
+                        final directory = await getApplicationDocumentsDirectory();
+                        final name = '${_uuid.v4()}.jpg';
+                        final File newImage = File('${directory.path}/$name');
+                        await File(image.path).copy(newImage.path);
+                        
+                        // Borrar la foto anterior si existe
+                        if (photoPath != null) {
+                          try {
+                            await File(photoPath!).delete();
+                          } catch (e) {
+                            debugPrint('Error borrando foto anterior: $e');
+                          }
+                        }
+                        
+                        setState(() {
+                          photoPath = newImage.path;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (controlador.text.isNotEmpty) {
+                      final updatedUser = User(
+                        id: user.id,
+                        name: controlador.text,
+                        photoPath: photoPath,
+                      );
+                      
+                      final updatedUsers = widget.users.map((u) => 
+                        u.id == user.id ? updatedUser : u
+                      ).toList();
+                      
+                      widget.onUsersUpdated(updatedUsers);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmarBorrado(User user) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Borrar Perfil'),
+          content: Text('¿Estás seguro de que quieres borrar el perfil de ${user.name}? Esta acción no se puede deshacer.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                // Borrar la foto si existe
+                if (user.photoPath != null) {
+                  try {
+                    await File(user.photoPath!).delete();
+                  } catch (e) {
+                    debugPrint('Error borrando foto: $e');
+                  }
+                }
+                
+                final updatedUsers = widget.users.where((u) => u.id != user.id).toList();
+                widget.onUsersUpdated(updatedUsers);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Borrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,6 +281,19 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                         ),
                         title: Text(user.name),
                         onTap: () => widget.onUserSelected(user),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _editarUsuario(user),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _confirmarBorrado(user),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
