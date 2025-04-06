@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  Map<String, List<Symptom>> _sintomas = {};
+  Map<String, List<Symptom>> _symptoms = {};
   final _prefsInstance = SharedPreferences.getInstance();
   final _uuid = const Uuid();
   List<SymptomTag> _tags = [];
@@ -143,8 +143,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _cargarSintomas();
-    _cargarTags().then((_) {
+    _loadSymptoms();
+    _loadTags().then((_) {
       // Si no hay etiquetas guardadas, crear las predefinidas
       if (_tags.isEmpty) {
         final localizations = AppLocalizations.of(context)!;
@@ -167,23 +167,23 @@ class _HomePageState extends State<HomePage> {
             ),
           ];
         });
-        _guardarTags();  // Guardar las etiquetas predefinidas
+        _saveTags();  // Guardar las etiquetas predefinidas
       }
     });
   }
 
-  String _fechaAClave(DateTime fecha) {
+  String _dateToKey(DateTime fecha) {
     return "${fecha.year}-${fecha.month}-${fecha.day}";
   }
 
-  Future<void> _cargarSintomas() async {
+  Future<void> _loadSymptoms() async {
     final prefs = await _prefsInstance;
-    final sintomasString = prefs.getString(_userSymptomsKey);  // Usar clave única
-    if (sintomasString != null) {
+    final symptomsString = prefs.getString(_userSymptomsKey);  // Usar clave única
+    if (symptomsString != null) {
       try {
-        final Map<String, dynamic> decodedData = json.decode(sintomasString);
+        final Map<String, dynamic> decodedData = json.decode(symptomsString);
         setState(() {
-          _sintomas = Map.fromEntries(
+          _symptoms = Map.fromEntries(
             decodedData.entries.map(
               (e) => MapEntry(
                 e.key,
@@ -200,19 +200,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _guardarSintomas() async {
+  Future<void> _saveSymptoms() async {
     final prefs = await _prefsInstance;
     try {
-      final sintomasJson = _sintomas.map(
+      final symptomsJson = _symptoms.map(
         (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
       );
-      await prefs.setString(_userSymptomsKey, json.encode(sintomasJson));  // Usar clave única
+      await prefs.setString(_userSymptomsKey, json.encode(symptomsJson));  // Usar clave única
     } catch (e) {
       debugPrint('Error guardando síntomas: $e');
     }
   }
 
-  Future<void> _cargarTags() async {
+  Future<void> _loadTags() async {
     final prefs = await _prefsInstance;
     final tagsString = prefs.getString(_userTagsKey);  // Usar clave única
     if (tagsString != null) {
@@ -229,7 +229,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _guardarTags() async {
+  Future<void> _saveTags() async {
     final prefs = await _prefsInstance;
     try {
       await prefs.setString(_userTagsKey, json.encode(_tags.map((e) => e.toJson()).toList()));  // Usar clave única
@@ -238,13 +238,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _limpiarDatos() async {
+  Future<void> _clearData() async {
     final prefs = await _prefsInstance;
     await prefs.remove(_userSymptomsKey);  // Limpiar solo los datos del usuario actual
     await prefs.remove(_userTagsKey);      // Limpiar solo los datos del usuario actual
     setState(() {
       _tags = [];
-      _sintomas = {};
+      _symptoms = {};
     });
   }
 
@@ -366,7 +366,7 @@ class _HomePageState extends State<HomePage> {
                             );
                           }
                         });
-                        _guardarTags();
+                        _saveTags();
                         Navigator.of(context).pop();
                       }
                     },
@@ -390,7 +390,7 @@ class _HomePageState extends State<HomePage> {
   ) async {
     if (tag == null) return;
     
-    final key = _fechaAClave(fecha);
+    final key = _dateToKey(fecha);
     
     final nuevoSintoma = Symptom(
       id: _uuid.v4(),
@@ -402,21 +402,21 @@ class _HomePageState extends State<HomePage> {
     );
 
     setState(() {
-      if (!_sintomas.containsKey(key)) {
-        _sintomas[key] = [];
+      if (!_symptoms.containsKey(key)) {
+        _symptoms[key] = [];
       }
-      _sintomas[key]!.add(nuevoSintoma);
+      _symptoms[key]!.add(nuevoSintoma);
     });
 
-    await _guardarSintomas();
+    await _saveSymptoms();
   }
 
-  void _mostrarDialogoSintomas(DateTime dia) {
+  void _showSymptomsDialog(DateTime dia) {
     final controlador = TextEditingController();
     String? selectedTag;
     String selectedTime = 'allday';
-    final key = _fechaAClave(dia);
-    List<Symptom> sintomasDelDia = _sintomas[key] ?? [];  // Cambiado a variable mutable
+    final key = _dateToKey(dia);
+    List<Symptom> daySymptoms = _symptoms[key] ?? [];  // Cambiado a variable mutable
     final localizations = AppLocalizations.of(context)!;
     final date = "${dia.day}/${dia.month}/${dia.year}";
 
@@ -639,10 +639,10 @@ class _HomePageState extends State<HomePage> {
                             );
                             
                             // Si es el primer síntoma del día, inicializar la lista
-                            if (sintomasDelDia.isEmpty) {
-                              sintomasDelDia = [nuevoSintoma];
+                            if (daySymptoms.isEmpty) {
+                              daySymptoms = [nuevoSintoma];
                             } else {
-                              sintomasDelDia.add(nuevoSintoma);
+                              daySymptoms.add(nuevoSintoma);
                             }
                             
                             // Limpiar el formulario
@@ -654,7 +654,7 @@ class _HomePageState extends State<HomePage> {
                         child: Text(localizations.save),
                       ),
                       
-                      if (sintomasDelDia.isNotEmpty) ...[
+                      if (daySymptoms.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         const Divider(),
                         Text(
@@ -665,7 +665,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ...sintomasDelDia.map((sintoma) => Card(
+                        ...daySymptoms.map((sintoma) => Card(
                           child: ListTile(
                             leading: Container(
                               width: 24,
@@ -692,19 +692,19 @@ class _HomePageState extends State<HomePage> {
                                   icon: const Icon(Icons.edit),
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _editarSintoma(sintoma, dia, setDialogState);
+                                    _editSymptom(sintoma, dia, setDialogState);
                                   },
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete),
                                   onPressed: () {
                                     setDialogState(() {
-                                      _sintomas[key]!.remove(sintoma);
-                                      if (_sintomas[key]!.isEmpty) {
-                                        _sintomas.remove(key);
+                                      _symptoms[key]!.remove(sintoma);
+                                      if (_symptoms[key]!.isEmpty) {
+                                        _symptoms.remove(key);
                                       }
                                     });
-                                    _guardarSintomas();
+                                    _saveSymptoms();
                                   },
                                 ),
                               ],
@@ -732,7 +732,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _editarSintoma(Symptom sintoma, DateTime dia, Function setDialogState) {
+  void _editSymptom(Symptom sintoma, DateTime dia, Function setDialogState) {
     final localizations = AppLocalizations.of(context)!;
     final controlador = TextEditingController(text: sintoma.description);
     String? selectedTag = sintoma.tag;
@@ -928,9 +928,9 @@ class _HomePageState extends State<HomePage> {
                     ).color;
                     
                     setState(() {
-                      final key = _fechaAClave(dia);
-                      final index = _sintomas[key]!.indexWhere((s) => s.id == sintoma.id);
-                      _sintomas[key]![index] = Symptom(
+                      final key = _dateToKey(dia);
+                      final index = _symptoms[key]!.indexWhere((s) => s.id == sintoma.id);
+                      _symptoms[key]![index] = Symptom(
                         id: sintoma.id,
                         description: controlador.text,
                         tag: selectedTag!,
@@ -940,7 +940,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     });
                     
-                    _guardarSintomas();
+                    _saveSymptoms();
                     Navigator.of(context).pop();
                     setDialogState(() {});
                   },
@@ -1030,7 +1030,7 @@ class _HomePageState extends State<HomePage> {
                       _selectedDay = selectedDay;
                       _focusedDay = focusedDay;
                     });
-                    _mostrarDialogoSintomas(selectedDay);
+                    _showSymptomsDialog(selectedDay);
                   },
                   availableGestures: AvailableGestures.all,
                   headerStyle: const HeaderStyle(
@@ -1055,11 +1055,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                   calendarBuilders: CalendarBuilders(
                     markerBuilder: (context, date, events) {
-                      final key = _fechaAClave(date);
-                      if (_sintomas.containsKey(key)) {
+                      final key = _dateToKey(date);
+                      if (_symptoms.containsKey(key)) {
                         return Wrap(
                           spacing: 2,
-                          children: _sintomas[key]!.map((sintoma) {
+                          children: _symptoms[key]!.map((sintoma) {
                             return CustomPaint(
                               size: const Size(10, 10),
                               painter: ShapeMarkerPainter(
@@ -1073,8 +1073,8 @@ class _HomePageState extends State<HomePage> {
                       return null;
                     },
                     defaultBuilder: (context, day, focusedDay) {
-                      final key = _fechaAClave(day);
-                      final hasSymptoms = _sintomas.containsKey(key);
+                      final key = _dateToKey(day);
+                      final hasSymptoms = _symptoms.containsKey(key);
                       
                       return Container(
                         margin: const EdgeInsets.all(4),
@@ -1095,8 +1095,8 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                     selectedBuilder: (context, day, focusedDay) {
-                      final key = _fechaAClave(day);
-                      final hasSymptoms = _sintomas.containsKey(key);
+                      final key = _dateToKey(day);
+                      final hasSymptoms = _symptoms.containsKey(key);
                       
                       return Container(
                         margin: const EdgeInsets.all(4),
@@ -1113,8 +1113,8 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                     todayBuilder: (context, day, focusedDay) {
-                      final key = _fechaAClave(day);
-                      final hasSymptoms = _sintomas.containsKey(key);
+                      final key = _dateToKey(day);
+                      final hasSymptoms = _symptoms.containsKey(key);
                       
                       return Container(
                         margin: const EdgeInsets.all(4),
@@ -1151,7 +1151,7 @@ class _HomePageState extends State<HomePage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => StatisticsScreen(
-                        symptoms: _sintomas,
+                        symptoms: _symptoms,
                         tags: _tags,
                         userName: widget.user.name,
                       ),
