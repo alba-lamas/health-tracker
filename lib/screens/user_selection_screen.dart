@@ -28,7 +28,8 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   Future<void> _createNewUser() async {
     final controller = TextEditingController();
     String? photoPath;
-    Color selectedColor = Colors.blue;  // Color por defecto
+    Color selectedColor = Colors.blue;
+    final localizations = AppLocalizations.of(context)!;
 
     return showDialog(
       context: context,
@@ -36,19 +37,19 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Nuevo Perfil'),
+              title: Text(localizations.newProfile),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: localizations.name,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Color del perfil:'),
+                  Text(localizations.profileColorLabel),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -83,7 +84,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                   ),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.camera_alt),
-                    label: const Text('Añadir Foto'),
+                    label: Text(photoPath == null 
+                      ? localizations.addPhoto 
+                      : localizations.changePhoto
+                    ),
                     onPressed: () async {
                       final ImagePicker picker = ImagePicker();
                       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -101,13 +105,16 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                     },
                   ),
                   if (photoPath != null)
-                    const Text('Foto seleccionada', style: TextStyle(color: Colors.green)),
+                    Text(
+                      localizations.photoSelected,
+                      style: const TextStyle(color: Colors.green),
+                    ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(localizations.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -124,7 +131,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                       Navigator.of(context).pop();
                     }
                   },
-                  child: const Text('Crear'),
+                  child: Text(localizations.create),
                 ),
               ],
             );
@@ -135,9 +142,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   }
 
   Future<void> _editUser(User user) async {
+    final localizations = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: user.name);
     String? photoPath = user.photoPath;
-    Color selectedColor = Color(user.color);  // Inicializar con el color actual
+    Color selectedColor = Color(user.color);
 
     return showDialog(
       context: context,
@@ -145,19 +153,19 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Editar Perfil'),
+              title: Text(localizations.editProfile),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: localizations.name,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Color del perfil:'),
+                  Text(localizations.profileColorLabel),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -214,7 +222,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.camera_alt),
-                    label: Text(photoPath == null ? 'Añadir Foto' : 'Cambiar Foto'),
+                    label: Text(photoPath == null 
+                      ? localizations.addPhoto 
+                      : localizations.changePhoto
+                    ),
                     onPressed: () async {
                       final ImagePicker picker = ImagePicker();
                       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -245,7 +256,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(localizations.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -265,7 +276,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                       Navigator.of(context).pop();
                     }
                   },
-                  child: const Text('Guardar'),
+                  child: Text(localizations.save),
                 ),
               ],
             );
@@ -276,16 +287,17 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   }
 
   Future<void> _confirmDelete(User user) async {
+    final localizations = AppLocalizations.of(context)!;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Borrar Perfil'),
-          content: Text('¿Estás seguro de que quieres borrar el perfil de ${user.name}? Esta acción no se puede deshacer.'),
+          title: Text(localizations.deleteProfileTitle),
+          content: Text(localizations.deleteProfileConfirmation(user.name)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: Text(localizations.cancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -306,7 +318,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                 widget.onUsersUpdated(updatedUsers);
                 Navigator.of(context).pop();
               },
-              child: const Text('Borrar'),
+              child: Text(localizations.delete),
             ),
           ],
         );
@@ -316,9 +328,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.selectProfile),
+        title: Text(localizations.selectProfile),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Column(
@@ -326,7 +339,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
           Expanded(
             child: widget.users.isEmpty
               ? Center(
-                  child: Text(AppLocalizations.of(context)!.noProfiles),
+                  child: Text(localizations.noProfiles),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(8),
@@ -375,7 +388,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton.icon(
               icon: const Icon(Icons.person_add),
-              label: const Text('Crear Nuevo Perfil'),
+              label: Text(localizations.createNewProfile),
               onPressed: _createNewUser,
             ),
           ),

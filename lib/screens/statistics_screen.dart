@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/symptom.dart';
 import '../models/tag.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final Map<String, List<Symptom>> symptoms;
@@ -97,41 +98,62 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   String _getPeriodTitle() {
+    final localizations = AppLocalizations.of(context)!;
     final now = DateTime.now();
     switch (_selectedPeriod) {
       case 'week':
-        return 'Últimos 7 días';
+        return localizations.lastDays;
       case 'month':
-        return '${_getMonthName(now.month)} ${now.year}';
+        return localizations.monthYear(
+          _getMonthName(now.month),
+          now.year.toString(),
+        );
       case 'year':
-        return 'Año ${now.year}';
+        return localizations.yearOnly(now.year.toString());
       case 'custom':
         if (_customStartDate != null && _customEndDate != null) {
-          return '${_customStartDate!.day}/${_customStartDate!.month} - ${_customEndDate!.day}/${_customEndDate!.month}';
+          return localizations.dateRange(
+            '${_customStartDate!.day}/${_customStartDate!.month}',
+            '${_customEndDate!.day}/${_customEndDate!.month}',
+          );
         }
-        return 'Período personalizado';
+        return localizations.customPeriod;
       default:
         return '';
     }
   }
 
   String _getMonthName(int month) {
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    final localizations = AppLocalizations.of(context)!;
+    final months = [
+      localizations.january,
+      localizations.february,
+      localizations.march,
+      localizations.april,
+      localizations.may,
+      localizations.june,
+      localizations.july,
+      localizations.august,
+      localizations.september,
+      localizations.october,
+      localizations.november,
+      localizations.december,
     ];
     return months[month - 1];
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final tagFrequency = _calculateTagFrequency();
+    // Filtrar solo las etiquetas que tienen registros
+    final activeTags = widget.tags.where((tag) => (tagFrequency[tag.name] ?? 0) > 0).toList();
     final maxValue = tagFrequency.values.fold(0, (max, value) => value > max ? value : max);
-    final filteredSymptoms = _getFilteredSymptoms();  // Nueva función para obtener los síntomas filtrados
+    final filteredSymptoms = _getFilteredSymptoms();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Estadísticas de ${widget.userName}'),
+        title: Text(localizations.statisticsOf(widget.userName)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(  // Añadido para permitir scroll
@@ -145,28 +167,28 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ChoiceChip(
-                    label: const Text('7 días'),
+                    label: Text(localizations.last7Days),
                     selected: _selectedPeriod == 'week',
                     onSelected: (selected) {
                       setState(() => _selectedPeriod = 'week');
                     },
                   ),
                   ChoiceChip(
-                    label: const Text('Mes'),
+                    label: Text(localizations.month),
                     selected: _selectedPeriod == 'month',
                     onSelected: (selected) {
                       setState(() => _selectedPeriod = 'month');
                     },
                   ),
                   ChoiceChip(
-                    label: const Text('Año'),
+                    label: Text(localizations.year),
                     selected: _selectedPeriod == 'year',
                     onSelected: (selected) {
                       setState(() => _selectedPeriod = 'year');
                     },
                   ),
                   ActionChip(
-                    label: const Text('Personalizado'),
+                    label: Text(localizations.custom),
                     onPressed: _showCustomDatePicker,
                     backgroundColor: _selectedPeriod == 'custom' 
                       ? Theme.of(context).primaryColor 
@@ -189,78 +211,89 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               SizedBox(
                 height: 300,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 20.0, bottom: 40.0),
-                  child: BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      maxY: maxValue.toDouble(),
-                      barGroups: widget.tags.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final tag = entry.value;
-                        return BarChartGroupData(
-                          x: index,
-                          barRods: [
-                            BarChartRodData(
-                              toY: tagFrequency[tag.name]?.toDouble() ?? 0,
-                              color: Color(tag.color),
-                              width: 20,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                      titlesData: FlTitlesData(
-                        show: true,
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: RotatedBox(
-                                  quarterTurns: 1,
-                                  child: Text(
-                                    widget.tags[value.toInt()].name,
-                                    style: const TextStyle(fontSize: 12),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                  padding: const EdgeInsets.only(right: 20.0, bottom: 80.0),
+                  child: activeTags.isEmpty
+                    ? Center(
+                        child: Text(
+                          localizations.noRecordsForPeriod,
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceAround,
+                          maxY: maxValue.toDouble(),
+                          barGroups: activeTags.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final tag = entry.value;
+                            return BarChartGroupData(
+                              x: index,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: tagFrequency[tag.name]?.toDouble() ?? 0,
+                                  color: Color(tag.color),
+                                  width: 20,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                              );
-                            },
-                            reservedSize: 60,
+                              ],
+                            );
+                          }).toList(),
+                          titlesData: FlTitlesData(
+                            show: true,
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  final tagName = activeTags[value.toInt()].name;
+                                  final words = tagName.split(' ');
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: RotatedBox(
+                                      quarterTurns: 1,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: words.map((word) => Text(
+                                          word,
+                                          style: const TextStyle(fontSize: 12),
+                                          textAlign: TextAlign.center,
+                                        )).toList(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                reservedSize: 80,
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(fontSize: 12),
+                                  );
+                                },
+                              ),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
                           ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                value.toInt().toString(),
-                                style: const TextStyle(fontSize: 12),
-                              );
-                            },
-                          ),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
+                          gridData: const FlGridData(show: false),
+                          borderData: FlBorderData(show: false),
                         ),
                       ),
-                      gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
               Text(
-                'Detalle de síntomas',
+                localizations.symptomDetails,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
@@ -297,10 +330,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         const SizedBox(width: 4),
                         Text(
                           symptom.timeOfDay == 'morning'
-                            ? 'Mañana'
+                            ? localizations.morning
                             : symptom.timeOfDay == 'afternoon'
-                              ? 'Tarde'
-                              : 'Todo el día',
+                              ? localizations.afternoon
+                              : localizations.allDay,
                           style: const TextStyle(fontSize: 12),
                         ),
                       ],

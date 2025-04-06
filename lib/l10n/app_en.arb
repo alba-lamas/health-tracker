@@ -62,5 +62,63 @@
             }
         }
     },
-    "logout": "Log out"
+    "logout": "Log out",
+    "last7Days": "7 days",
+    "month": "Month",
+    "year": "Year",
+    "custom": "Custom",
+    "customPeriod": "Custom period",
+    "lastDays": "Last 7 days",
+    "monthYear": "{month} {year}",
+    "@monthYear": {
+        "placeholders": {
+            "month": { "type": "String" },
+            "year": { "type": "String" }
+        }
+    },
+    "yearOnly": "Year {year}",
+    "@yearOnly": {
+        "placeholders": {
+            "year": { "type": "String" }
+        }
+    },
+    "dateRange": "{start} - {end}",
+    "@dateRange": {
+        "placeholders": {
+            "start": { "type": "String" },
+            "end": { "type": "String" }
+        }
+    },
+    "noRecordsForPeriod": "No records for the selected period",
+    "symptomDetails": "Symptom details",
+    "tagHead": "Head",
+    "tagBack": "Back",
+    "tagStomach": "Stomach",
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December",
+    "profileColor": "Profile color:",
+    "deleteProfileTitle": "Delete Profile",
+    "deleteProfileConfirmation": "Are you sure you want to delete {name}'s profile? This action cannot be undone.",
+    "@deleteProfileConfirmation": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "manageTagsTitle": "Manage Tags",
+    "newTagLabel": "New Tag",
+    "editSymptomTitle": "Edit Symptom",
+    "editSymptomDescription": "Describe the symptom",
+    "profileColorLabel": "Profile color:",
+    "tagName": "Tag name",
+    "editTag": "Edit Tag"
 } 
