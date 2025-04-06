@@ -1,4 +1,4 @@
-name: symptom_tracker
+name: health_tracker
 description: A Flutter application for tracking health symptoms
 version: 1.0.0+1  # Versión inicial
 

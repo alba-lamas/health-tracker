@@ -1,4 +1,4 @@
-package com.example.symptom_tracker
+package com.example.health_tracker
 
 import io.flutter.embedding.android.FlutterActivity
 
