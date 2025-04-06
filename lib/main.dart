@@ -56,6 +56,21 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Crear el tema basado en el color del usuario
+    final ThemeData theme = _selectedUser != null
+      ? ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Color(_selectedUser!.color),
+          ),
+          useMaterial3: true,
+        )
+      : ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+          ),
+          useMaterial3: true,
+        );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Health Checker',
@@ -70,10 +85,7 @@ class _MyAppState extends State<MyApp> {
         Locale('es'), // Spanish
         Locale('ca'), // Catalan
       ],
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: theme,  // Usar el tema personalizado
       home: Builder(
         builder: (context) => _selectedUser == null
           ? UserSelectionScreen(

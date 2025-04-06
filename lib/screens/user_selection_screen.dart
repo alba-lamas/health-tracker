@@ -28,6 +28,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   Future<void> _createNewUser() async {
     final controller = TextEditingController();
     String? photoPath;
+    Color selectedColor = Colors.blue;  // Color por defecto
 
     return showDialog(
       context: context,
@@ -47,6 +48,39 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  const Text('Color del perfil:'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Colors.blue,
+                      Colors.purple,
+                      Colors.teal,
+                      Colors.orange,
+                      Colors.pink,
+                      Colors.green,
+                      Colors.red,
+                      Colors.indigo,
+                    ].map((color) => GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedColor = color;
+                        });
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: color == selectedColor
+                            ? Border.all(color: Colors.black, width: 2)
+                            : null,
+                        ),
+                      ),
+                    )).toList(),
+                  ),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Añadir Foto'),
@@ -82,6 +116,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                         id: _uuid.v4(),
                         name: controller.text,
                         photoPath: photoPath,
+                        color: selectedColor.value,  // Guardamos el color
                       );
                       
                       final updatedUsers = [...widget.users, newUser];
@@ -102,6 +137,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   Future<void> _editUser(User user) async {
     final controller = TextEditingController(text: user.name);
     String? photoPath = user.photoPath;
+    Color selectedColor = Color(user.color);  // Inicializar con el color actual
 
     return showDialog(
       context: context,
@@ -119,6 +155,40 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                       labelText: 'Nombre',
                       border: OutlineInputBorder(),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Color del perfil:'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Colors.blue,
+                      Colors.purple,
+                      Colors.teal,
+                      Colors.orange,
+                      Colors.pink,
+                      Colors.green,
+                      Colors.red,
+                      Colors.indigo,
+                    ].map((color) => GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedColor = color;
+                        });
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: color.value == selectedColor.value
+                            ? Border.all(color: Colors.black, width: 2)
+                            : null,
+                        ),
+                      ),
+                    )).toList(),
                   ),
                   const SizedBox(height: 16),
                   if (photoPath != null)
@@ -184,6 +254,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                         id: user.id,
                         name: controller.text,
                         photoPath: photoPath,
+                        color: selectedColor.value,  // Incluir el color al actualizar
                       );
                       
                       final updatedUsers = widget.users.map((u) => 
