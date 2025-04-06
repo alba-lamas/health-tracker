@@ -4,6 +4,7 @@ import 'dart:io';
 import '../models/user.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class UserSelectionScreen extends StatefulWidget {
   final List<User> users;
@@ -24,8 +25,8 @@ class UserSelectionScreen extends StatefulWidget {
 class _UserSelectionScreenState extends State<UserSelectionScreen> {
   final _uuid = const Uuid();
 
-  Future<void> _crearNuevoUsuario() async {
-    final controlador = TextEditingController();
+  Future<void> _createNewUser() async {
+    final controller = TextEditingController();
     String? photoPath;
 
     return showDialog(
@@ -39,7 +40,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    controller: controlador,
+                    controller: controller,
                     decoration: const InputDecoration(
                       labelText: 'Nombre',
                       border: OutlineInputBorder(),
@@ -76,10 +77,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (controlador.text.isNotEmpty) {
+                    if (controller.text.isNotEmpty) {
                       final newUser = User(
                         id: _uuid.v4(),
-                        name: controlador.text,
+                        name: controller.text,
                         photoPath: photoPath,
                       );
                       
@@ -98,8 +99,8 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
     );
   }
 
-  Future<void> _editarUsuario(User user) async {
-    final controlador = TextEditingController(text: user.name);
+  Future<void> _editUser(User user) async {
+    final controller = TextEditingController(text: user.name);
     String? photoPath = user.photoPath;
 
     return showDialog(
@@ -113,7 +114,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    controller: controlador,
+                    controller: controller,
                     decoration: const InputDecoration(
                       labelText: 'Nombre',
                       border: OutlineInputBorder(),
@@ -178,10 +179,10 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (controlador.text.isNotEmpty) {
+                    if (controller.text.isNotEmpty) {
                       final updatedUser = User(
                         id: user.id,
-                        name: controlador.text,
+                        name: controller.text,
                         photoPath: photoPath,
                       );
                       
@@ -203,7 +204,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
     );
   }
 
-  Future<void> _confirmarBorrado(User user) async {
+  Future<void> _confirmDelete(User user) async {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -246,15 +247,15 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Seleccionar Perfil'),
+        title: Text(AppLocalizations.of(context)!.selectProfile),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Column(
         children: [
           Expanded(
             child: widget.users.isEmpty
-              ? const Center(
-                  child: Text('No hay perfiles creados'),
+              ? Center(
+                  child: Text(AppLocalizations.of(context)!.noProfiles),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(8),
@@ -286,11 +287,11 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit),
-                              onPressed: () => _editarUsuario(user),
+                              onPressed: () => _editUser(user),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete),
-                              onPressed: () => _confirmarBorrado(user),
+                              onPressed: () => _confirmDelete(user),
                             ),
                           ],
                         ),
@@ -304,7 +305,7 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
             child: ElevatedButton.icon(
               icon: const Icon(Icons.person_add),
               label: const Text('Crear Nuevo Perfil'),
-              onPressed: _crearNuevoUsuario,
+              onPressed: _createNewUser,
             ),
           ),
         ],

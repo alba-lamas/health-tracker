@@ -1,0 +1,25 @@
+{
+    "appTitle": "Health Checker",
+    "selectProfile": "Select Profile",
+    "newProfile": "New Profile",
+    "editProfile": "Edit Profile",
+    "deleteProfile": "Delete Profile",
+    "name": "Name",
+    "addPhoto": "Add Photo",
+    "changePhoto": "Change Photo",
+    "photoSelected": "Photo selected",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "delete": "Delete",
+    "noProfiles": "No profiles created",
+    "createNewProfile": "Create New Profile",
+    "deleteConfirmation": "Are you sure you want to delete {name}'s profile? This action cannot be undone.",
+    "@deleteConfirmation": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    }
+} 

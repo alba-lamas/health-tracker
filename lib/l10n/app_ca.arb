@@ -1,0 +1,18 @@
+{
+    "appTitle": "Health Checker",
+    "selectProfile": "Seleccionar Perfil",
+    "newProfile": "Nou Perfil",
+    "editProfile": "Editar Perfil",
+    "deleteProfile": "Esborrar Perfil",
+    "name": "Nom",
+    "addPhoto": "Afegir Foto",
+    "changePhoto": "Canviar Foto",
+    "photoSelected": "Foto seleccionada",
+    "cancel": "Cancel·lar",
+    "save": "Desar",
+    "create": "Crear",
+    "delete": "Esborrar",
+    "noProfiles": "No hi ha perfils creats",
+    "createNewProfile": "Crear Nou Perfil",
+    "deleteConfirmation": "Estàs segur que vols esborrar el perfil de {name}? Aquesta acció no es pot desfer."
+} 

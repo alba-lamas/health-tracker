@@ -8,6 +8,8 @@ import 'models/tag.dart';
 import 'models/user.dart';
 import 'screens/user_selection_screen.dart';
 import 'dart:io';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,29 +58,43 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Control de Síntomas',
+      title: 'Health Checker',
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('es'), // Spanish
+        Locale('ca'), // Catalan
+      ],
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      home: _selectedUser == null
-        ? UserSelectionScreen(
-            users: _users,
-            onUserSelected: (user) {
-              setState(() {
-                _selectedUser = user;
-              });
-            },
-            onUsersUpdated: _guardarUsuarios,
-          )
-        : HomePage(
-            user: _selectedUser!,
-            onLogout: () {
-              setState(() {
-                _selectedUser = null;
-              });
-            },
-          ),
+      home: Builder(
+        builder: (context) => _selectedUser == null
+          ? UserSelectionScreen(
+              users: _users,
+              onUserSelected: (user) {
+                setState(() {
+                  _selectedUser = user;
+                });
+              },
+              onUsersUpdated: _guardarUsuarios,
+            )
+          : HomePage(
+              title: AppLocalizations.of(context)?.appTitle ?? 'Health Checker',
+              user: _selectedUser!,
+              onLogout: () {
+                setState(() {
+                  _selectedUser = null;
+                });
+              },
+            ),
+      ),
     );
   }
 }
@@ -86,11 +102,13 @@ class _MyAppState extends State<MyApp> {
 class HomePage extends StatefulWidget {
   final User user;
   final VoidCallback onLogout;
+  final String title;
 
   const HomePage({
     super.key,
     required this.user,
     required this.onLogout,
+    required this.title,
   });
 
   @override
@@ -968,7 +986,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Control de Síntomas'),
+        title: Text(widget.title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           Padding(
