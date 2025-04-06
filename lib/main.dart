@@ -448,7 +448,7 @@ class _HomePageState extends State<HomePage> {
   void _mostrarDialogoSintomas(DateTime dia) {
     final controlador = TextEditingController();
     String? selectedTag;
-    String selectedTime = 'allday'; // valor por defecto
+    String selectedTime = 'allday';
 
     showDialog(
       context: context,
@@ -456,304 +456,213 @@ class _HomePageState extends State<HomePage> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return WillPopScope(
-              onWillPop: () async => false,
-              child: Dialog(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.9,
-                    maxWidth: MediaQuery.of(context).size.width * 0.9,
+            void updateSelectedTag(String? newTag) {
+              setDialogState(() {
+                selectedTag = newTag;
+              });
+            }
+
+            bool isButtonEnabled() {
+              return controlador.text.isNotEmpty && selectedTag != null;
+            }
+
+            return AlertDialog(
+              title: const Text('Agregar Síntoma'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controlador,
+                    onChanged: (text) {
+                      // Forzar actualización cuando cambia el texto
+                      setDialogState(() {});
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Describe el síntoma',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.all(16),
+                    ),
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 16),
+                  // Botones de selección de momento del día
+                  Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Síntomas para ${dia.day}/${dia.month}/${dia.year}',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                controller: controlador,
-                                decoration: const InputDecoration(
-                                  labelText: 'Describe el síntoma',
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.all(16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ChoiceChip(
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.wb_sunny_outlined,
+                                  size: 18,
+                                  color: selectedTime == 'morning' ? Colors.white : Colors.grey,
                                 ),
-                                maxLines: 3,
-                                textCapitalization: TextCapitalization.sentences,
-                                keyboardType: TextInputType.multiline,
-                              ),
-                              const SizedBox(height: 16),
-                              // Botones de selección de momento del día
-                              Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      ChoiceChip(
-                                        label: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.wb_sunny_outlined,
-                                              size: 18,
-                                              color: selectedTime == 'morning' ? Colors.white : Colors.grey,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Mañana',
-                                              style: TextStyle(
-                                                color: selectedTime == 'morning' ? Colors.white : Colors.black,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        selected: selectedTime == 'morning',
-                                        onSelected: (bool selected) {
-                                          setDialogState(() {
-                                            selectedTime = selected ? 'morning' : 'allday';
-                                          });
-                                        },
-                                        avatar: null,
-                                        selectedColor: Colors.blue,
-                                        backgroundColor: Colors.grey.shade200,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ChoiceChip(
-                                        label: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.wb_twilight,
-                                              size: 18,
-                                              color: selectedTime == 'afternoon' ? Colors.white : Colors.grey,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Tarde',
-                                              style: TextStyle(
-                                                color: selectedTime == 'afternoon' ? Colors.white : Colors.black,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        selected: selectedTime == 'afternoon',
-                                        onSelected: (bool selected) {
-                                          setDialogState(() {
-                                            selectedTime = selected ? 'afternoon' : 'allday';
-                                          });
-                                        },
-                                        avatar: null,
-                                        selectedColor: Colors.blue,
-                                        backgroundColor: Colors.grey.shade200,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  ChoiceChip(
-                                    label: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.schedule,
-                                          size: 18,
-                                          color: selectedTime == 'allday' ? Colors.white : Colors.grey,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Todo el día',
-                                          style: TextStyle(
-                                            color: selectedTime == 'allday' ? Colors.white : Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    selected: selectedTime == 'allday',
-                                    onSelected: (bool selected) {
-                                      setDialogState(() {
-                                        selectedTime = 'allday';
-                                      });
-                                    },
-                                    avatar: null,
-                                    selectedColor: Colors.blue,
-                                    backgroundColor: Colors.grey.shade200,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  const Text('Selecciona una etiqueta:'),
-                                  const Spacer(),
-                                  IconButton(
-                                    icon: const Icon(Icons.add),
-                                    tooltip: 'Nueva Etiqueta',
-                                    onPressed: () {
-                                      _crearEditarTag(context).then((_) {
-                                        setDialogState(() {});
-                                      });
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings),
-                                    tooltip: 'Gestionar Etiquetas',
-                                    onPressed: () {
-                                      _mostrarDialogoGestionTags().then((_) {
-                                        setDialogState(() {});
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              if (_tags.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'No hay etiquetas creadas',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _tags.map((tag) => FilterChip(
-                                  selected: tag.name == selectedTag,
-                                  label: Text(tag.name),
-                                  avatar: Container(
-                                    width: 16,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: Color(tag.color),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  onSelected: (bool selected) {
-                                    setDialogState(() {
-                                      selectedTag = selected ? tag.name : null;
-                                    });
-                                  },
-                                )).toList(),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: selectedTag == null || controlador.text.isEmpty ? null : () {
-                                  final tagColor = _tags.firstWhere(
-                                    (tag) => tag.name == selectedTag
-                                  ).color;
-                                  _guardarSintoma(
-                                    controlador.text, 
-                                    selectedTag, 
-                                    tagColor, 
-                                    dia,
-                                    selectedTime,
-                                  );
-                                  controlador.clear();
-                                  setDialogState(() {
-                                    selectedTag = null;
-                                    selectedTime = 'allday';
-                                  });
-                                },
-                                child: const Text('Guardar Síntoma'),
-                              ),
-                              const SizedBox(height: 16),
-                              const Divider(),
-                              if (_sintomas.containsKey(_fechaAClave(dia))) ...[
-                                const Text('Síntomas registrados:'),
-                                const SizedBox(height: 8),
-                                ..._sintomas[_fechaAClave(dia)]!.map(
-                                  (sintoma) => Card(
-                                    child: ListTile(
-                                      leading: Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          color: Color(int.parse(sintoma.color)),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      title: Text(sintoma.tag),
-                                      subtitle: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(sintoma.description),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                sintoma.timeOfDay == 'morning' 
-                                                  ? Icons.wb_sunny_outlined
-                                                  : sintoma.timeOfDay == 'afternoon'
-                                                    ? Icons.wb_twilight
-                                                    : Icons.schedule,
-                                                size: 14,
-                                                color: Colors.grey[600],
-                                              ),
-                                              Text(
-                                                ' ${sintoma.timeOfDay == 'morning' 
-                                                  ? 'Mañana'
-                                                  : sintoma.timeOfDay == 'afternoon'
-                                                    ? 'Tarde'
-                                                    : 'Todo el día'}',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      onTap: () => _editarSintoma(sintoma, dia, setDialogState),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.edit),
-                                            onPressed: () => _editarSintoma(sintoma, dia, setDialogState),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete),
-                                            onPressed: () {
-                                              setDialogState(() {
-                                                _sintomas[_fechaAClave(dia)]!.remove(sintoma);
-                                                if (_sintomas[_fechaAClave(dia)]!.isEmpty) {
-                                                  _sintomas.remove(_fechaAClave(dia));
-                                                }
-                                              });
-                                              _guardarSintomas();
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Mañana',
+                                  style: TextStyle(
+                                    color: selectedTime == 'morning' ? Colors.white : Colors.black,
                                   ),
                                 ),
                               ],
-                            ],
+                            ),
+                            selected: selectedTime == 'morning',
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                selectedTime = selected ? 'morning' : 'allday';
+                              });
+                            },
+                            avatar: null,
+                            selectedColor: Colors.blue,
+                            backgroundColor: Colors.grey.shade200,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.wb_twilight,
+                                  size: 18,
+                                  color: selectedTime == 'afternoon' ? Colors.white : Colors.grey,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Tarde',
+                                  style: TextStyle(
+                                    color: selectedTime == 'afternoon' ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            selected: selectedTime == 'afternoon',
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                selectedTime = selected ? 'afternoon' : 'allday';
+                              });
+                            },
+                            avatar: null,
+                            selectedColor: Colors.blue,
+                            backgroundColor: Colors.grey.shade200,
+                          ),
+                        ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cerrar'),
+                      const SizedBox(height: 8),
+                      ChoiceChip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 18,
+                              color: selectedTime == 'allday' ? Colors.white : Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Todo el día',
+                              style: TextStyle(
+                                color: selectedTime == 'allday' ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
+                        selected: selectedTime == 'allday',
+                        onSelected: (bool selected) {
+                          setDialogState(() {
+                            selectedTime = 'allday';
+                          });
+                        },
+                        avatar: null,
+                        selectedColor: Colors.blue,
+                        backgroundColor: Colors.grey.shade200,
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text('Selecciona una etiqueta:'),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Nueva Etiqueta',
+                        onPressed: () {
+                          _crearEditarTag(context).then((_) {
+                            setDialogState(() {});
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        tooltip: 'Gestionar Etiquetas',
+                        onPressed: () {
+                          _mostrarDialogoGestionTags().then((_) {
+                            setDialogState(() {});
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_tags.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'No hay etiquetas creadas',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _tags.map((tag) => FilterChip(
+                      selected: tag.name == selectedTag,
+                      label: Text(tag.name),
+                      avatar: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Color(tag.color),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      onSelected: (bool selected) {
+                        updateSelectedTag(selected ? tag.name : null);
+                      },
+                    )).toList(),
+                  ),
+                ],
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: isButtonEnabled() 
+                    ? () {
+                        final tagColor = _tags.firstWhere(
+                          (tag) => tag.name == selectedTag
+                        ).color;
+                        
+                        _guardarSintoma(
+                          controlador.text,
+                          selectedTag,
+                          tagColor,
+                          dia,
+                          selectedTime,
+                        );
+                        Navigator.of(context).pop();
+                      }
+                    : null,
+                  child: const Text('Guardar'),
+                ),
+              ],
             );
           },
         );
