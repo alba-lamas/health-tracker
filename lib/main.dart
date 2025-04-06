@@ -464,6 +464,8 @@ class _HomePageState extends State<HomePage> {
     String selectedTime = 'allday';
     final key = _fechaAClave(dia);
     final sintomasDelDia = _sintomas[key] ?? [];
+    final localizations = AppLocalizations.of(context)!;
+    final date = "${dia.day}/${dia.month}/${dia.year}";
 
     showDialog(
       context: context,
@@ -482,7 +484,7 @@ class _HomePageState extends State<HomePage> {
             }
 
             return AlertDialog(
-              title: Text('Síntomas del ${dia.day}/${dia.month}/${dia.year}'),
+              title: Text(localizations.symptomsOf(date)),
               content: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.9,
                 height: MediaQuery.of(context).size.height * 0.8,
@@ -491,10 +493,9 @@ class _HomePageState extends State<HomePage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Formulario de nuevo síntoma
-                      const Text(
-                        'Nuevo síntoma:',
-                        style: TextStyle(
+                      Text(
+                        localizations.newSymptom,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -505,17 +506,16 @@ class _HomePageState extends State<HomePage> {
                         onChanged: (text) {
                           setDialogState(() {});
                         },
-                        decoration: const InputDecoration(
-                          labelText: 'Describe el síntoma',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.all(16),
+                        decoration: InputDecoration(
+                          labelText: localizations.describeSymptom,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.all(16),
                         ),
                         maxLines: 3,
                         textCapitalization: TextCapitalization.sentences,
                         keyboardType: TextInputType.multiline,
                       ),
-                      const SizedBox(height: 24),  // Aumentado de 16 a 24
-                      // Botones de selección de momento del día
+                      const SizedBox(height: 24),
                       Column(
                         children: [
                           Row(
@@ -532,7 +532,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Mañana',
+                                      localizations.morning,
                                       style: TextStyle(
                                         color: selectedTime == 'morning' ? Colors.white : Colors.black,
                                       ),
@@ -551,7 +551,6 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(width: 8),
                               ChoiceChip(
                                 label: Row(
-                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.wb_twilight,
@@ -560,7 +559,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Tarde',
+                                      localizations.afternoon,
                                       style: TextStyle(
                                         color: selectedTime == 'afternoon' ? Colors.white : Colors.black,
                                       ),
@@ -590,7 +589,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Todo el día',
+                                  localizations.allDay,
                                   style: TextStyle(
                                     color: selectedTime == 'allday' ? Colors.white : Colors.black,
                                   ),
@@ -611,11 +610,11 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          const Text('Selecciona una etiqueta:'),
+                          Text(localizations.selectTag),
                           const Spacer(),
                           IconButton(
                             icon: const Icon(Icons.add),
-                            tooltip: 'Nueva Etiqueta',
+                            tooltip: localizations.newTag,
                             onPressed: () {
                               _crearEditarTag(context).then((_) {
                                 setDialogState(() {});
@@ -624,7 +623,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.settings),
-                            tooltip: 'Gestionar Etiquetas',
+                            tooltip: localizations.manageTags,
                             onPressed: () {
                               _mostrarDialogoGestionTags().then((_) {
                                 setDialogState(() {});
@@ -633,12 +632,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
                       if (_tags.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(8.0),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            'No hay etiquetas creadas',
+                            localizations.noTags,
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -663,37 +661,36 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: isButtonEnabled() 
-                          ? () {
-                              final tagColor = _tags.firstWhere(
-                                (tag) => tag.name == selectedTag
-                              ).color;
-                              
-                              _guardarSintoma(
-                                controlador.text,
-                                selectedTag,
-                                tagColor,
-                                dia,
-                                selectedTime,
-                              );
-                              
-                              setDialogState(() {
-                                controlador.clear();
-                                selectedTag = null;
-                                selectedTime = 'allday';
-                              });
-                            }
-                          : null,
-                        child: const Text('Guardar'),
+                        onPressed: isButtonEnabled() ? () async {
+                          final tagColor = _tags.firstWhere(
+                            (tag) => tag.name == selectedTag
+                          ).color;
+                          
+                          // Guardamos el síntoma
+                          await _guardarSintoma(
+                            controlador.text,
+                            selectedTag,
+                            tagColor,
+                            dia,
+                            selectedTime,
+                          );
+                          
+                          // Solo limpiamos el formulario
+                          setDialogState(() {
+                            controlador.clear();
+                            selectedTag = null;
+                            selectedTime = 'allday';
+                          });
+                        } : null,
+                        child: Text(localizations.save),
                       ),
                       
-                      // Lista de síntomas registrados
                       if (sintomasDelDia.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         const Divider(),
-                        const Text(
-                          'Síntomas registrados:',
-                          style: TextStyle(
+                        Text(
+                          localizations.registeredSymptoms,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -755,7 +752,7 @@ class _HomePageState extends State<HomePage> {
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cerrar'),
+                    child: Text(localizations.close),
                   ),
                 ),
               ],

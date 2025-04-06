@@ -21,5 +21,46 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "newSymptom": "New symptom",
+    "describeSymptom": "Describe the symptom",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "allDay": "All day",
+    "selectTag": "Select a tag",
+    "newTag": "New Tag",
+    "manageTags": "Manage Tags",
+    "noTags": "No tags created",
+    "editSymptom": "Edit Symptom",
+    "close": "Close",
+    "registeredSymptoms": "Registered symptoms",
+    "symptomsOf": "Symptoms of {date}",
+    "@symptomsOf": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "statistics": "Statistics",
+    "viewStatistics": "View Statistics",
+    "statisticsOf": "Statistics of {name}",
+    "@statisticsOf": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "symptomFrequencyByTag": "Symptom frequency by tag",
+    "logoutConfirmation": "Log out?",
+    "logoutMessage": "Do you want to log out of {name}'s profile?",
+    "@logoutMessage": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "logout": "Log out"
 } 
