@@ -463,7 +463,7 @@ class _HomePageState extends State<HomePage> {
     String? selectedTag;
     String selectedTime = 'allday';
     final key = _fechaAClave(dia);
-    final sintomasDelDia = _sintomas[key] ?? [];
+    List<Symptom> sintomasDelDia = _sintomas[key] ?? [];  // Cambiado a variable mutable
     final localizations = AppLocalizations.of(context)!;
     final date = "${dia.day}/${dia.month}/${dia.year}";
 
@@ -666,7 +666,6 @@ class _HomePageState extends State<HomePage> {
                             (tag) => tag.name == selectedTag
                           ).color;
                           
-                          // Guardamos el síntoma
                           await _guardarSintoma(
                             controlador.text,
                             selectedTag,
@@ -675,8 +674,25 @@ class _HomePageState extends State<HomePage> {
                             selectedTime,
                           );
                           
-                          // Solo limpiamos el formulario
+                          // Actualizar la lista local con el nuevo síntoma
                           setDialogState(() {
+                            final nuevoSintoma = Symptom(
+                              id: _uuid.v4(),
+                              description: controlador.text,
+                              tag: selectedTag!,
+                              color: tagColor.toString(),
+                              date: dia,
+                              timeOfDay: selectedTime,
+                            );
+                            
+                            // Si es el primer síntoma del día, inicializar la lista
+                            if (sintomasDelDia.isEmpty) {
+                              sintomasDelDia = [nuevoSintoma];
+                            } else {
+                              sintomasDelDia.add(nuevoSintoma);
+                            }
+                            
+                            // Limpiar el formulario
                             controlador.clear();
                             selectedTag = null;
                             selectedTime = 'allday';
