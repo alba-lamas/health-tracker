@@ -3,10 +3,10 @@ android {
     compileSdkVersion flutter.compileSdkVersion
     
     defaultConfig {
-        applicationId "com.example.symptom_tracker"  // o el nombre que prefieras
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
+        applicationId "com.albalamas.symptom_tracker"
+        minSdkVersion 21
+        targetSdkVersion 33
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
     }
 } 
