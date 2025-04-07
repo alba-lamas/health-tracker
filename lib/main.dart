@@ -47,7 +47,7 @@ class _MyAppState extends State<MyApp> {
     _users = widget.initialUsers;
   }
 
-  Future<void> _guardarUsuarios(List<User> users) async {
+  Future<void> _saveUsers(List<User> users) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('users', json.encode(users.map((e) => e.toJson()).toList()));
     setState(() {
@@ -96,7 +96,7 @@ class _MyAppState extends State<MyApp> {
                   _selectedUser = user;
                 });
               },
-              onUsersUpdated: _guardarUsuarios,
+              onUsersUpdated: _saveUsers,
             )
           : HomePage(
               title: AppLocalizations.of(context)?.appTitle ?? 'Health Checker',
@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
           );
         });
       } catch (e) {
-        debugPrint('Error cargando síntomas: $e');
+        debugPrint('Error loading symptoms: $e');
       }
     }
   }
@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
       );
       await prefs.setString(_userSymptomsKey, json.encode(symptomsJson));  // Usar clave única
     } catch (e) {
-      debugPrint('Error guardando síntomas: $e');
+      debugPrint('Error saving symptoms: $e');
     }
   }
 
@@ -224,7 +224,7 @@ class _HomePageState extends State<HomePage> {
               .toList();
         });
       } catch (e) {
-        debugPrint('Error cargando tags: $e');
+        debugPrint('Error loading tags: $e');
       }
     }
   }
@@ -234,7 +234,7 @@ class _HomePageState extends State<HomePage> {
     try {
       await prefs.setString(_userTagsKey, json.encode(_tags.map((e) => e.toJson()).toList()));  // Usar clave única
     } catch (e) {
-      debugPrint('Error guardando tags: $e');
+      debugPrint('Error saving tags: $e');
     }
   }
 
@@ -248,30 +248,75 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _mostrarDialogoGestionTags() async {
+  Future<void> _showTagManagementDialog([DateTime? day]) async {
     final localizations = AppLocalizations.of(context)!;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(localizations.manageTagsTitle),
-          content: TextField(
-            controller: TextEditingController(),
-            decoration: InputDecoration(
-              labelText: localizations.newTagLabel,
-              border: const OutlineInputBorder(),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _tags.length + 1,
+              itemBuilder: (context, index) {
+                if (index == _tags.length) {
+                  return ListTile(
+                    leading: const Icon(Icons.add),
+                    title: Text(localizations.newTag),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createEditTag(context, null, day);
+                    },
+                  );
+                }
+                
+                final tag = _tags[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Color(tag.color),
+                    radius: 12,
+                  ),
+                  title: Text(tag.name),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _createEditTag(context, tag, day);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          setState(() {
+                            _tags.remove(tag);
+                          });
+                          _saveTags();
+                          Navigator.pop(context);
+                          if (day != null) {
+                            _showSymptomsDialog(day);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(localizations.cancel),
-            ),
-            ElevatedButton(
               onPressed: () {
-                // ... código existente ...
+                Navigator.of(context).pop();
+                if (day != null) {
+                  _showSymptomsDialog(day);
+                }
               },
-              child: Text(localizations.save),
+              child: Text(localizations.close),
             ),
           ],
         );
@@ -279,10 +324,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _crearEditarTag(BuildContext context, [SymptomTag? tagExistente]) async {
+  Future<void> _createEditTag(BuildContext context, [SymptomTag? existingTag, DateTime? day]) async {
     final localizations = AppLocalizations.of(context)!;
-    final controlador = TextEditingController(text: tagExistente?.name ?? '');
-    Color colorSeleccionado = Color(tagExistente?.color ?? Colors.blue.value);
+    final controlador = TextEditingController(text: existingTag?.name ?? '');
+    Color colorSeleccionado = Color(existingTag?.color ?? Colors.blue.value);
 
     return showDialog(
       context: context,
@@ -293,7 +338,7 @@ class _HomePageState extends State<HomePage> {
             return WillPopScope(
               onWillPop: () async => false,
               child: AlertDialog(
-                title: Text(tagExistente == null ? localizations.newTag : localizations.editTag),
+                title: Text(existingTag == null ? localizations.newTag : localizations.editTag),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -344,30 +389,55 @@ class _HomePageState extends State<HomePage> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (day != null) {
+                        Navigator.of(this.context).pop(); // Cerrar diálogo anterior
+                        _showSymptomsDialog(day);
+                      }
+                    },
                     child: Text(localizations.cancel),
                   ),
                   ElevatedButton(
                     onPressed: () {
                       if (controlador.text.isNotEmpty) {
                         setState(() {
-                          if (tagExistente == null) {
+                          if (existingTag == null) {
                             _tags.add(SymptomTag(
                               id: _uuid.v4(),
                               name: controlador.text,
                               color: colorSeleccionado.value,
                             ));
                           } else {
-                            final index = _tags.indexWhere((t) => t.id == tagExistente.id);
-                            _tags[index] = SymptomTag(
-                              id: tagExistente.id,
-                              name: controlador.text,
-                              color: colorSeleccionado.value,
-                            );
+                            final index = _tags.indexWhere((t) => t.id == existingTag.id);
+                            if (index != -1) {
+                              _tags[index] = SymptomTag(
+                                id: existingTag.id,
+                                name: controlador.text,
+                                color: colorSeleccionado.value,
+                              );
+
+                              // Actualizar todos los síntomas que usan esta etiqueta
+                              _symptoms.forEach((date, symptoms) {
+                                for (var i = 0; i < symptoms.length; i++) {
+                                  if (symptoms[i].tag == existingTag.name) {
+                                    symptoms[i] = symptoms[i].copyWith(
+                                      color: colorSeleccionado.value.toString(),
+                                      tag: controlador.text,
+                                    );
+                                  }
+                                }
+                              });
+                            }
                           }
                         });
                         _saveTags();
+                        _saveSymptoms(); // Guardar también los síntomas actualizados
                         Navigator.of(context).pop();
+                        if (day != null) {
+                          Navigator.of(this.context).pop();
+                          _showSymptomsDialog(day);
+                        }
                       }
                     },
                     child: Text(localizations.save),
@@ -381,23 +451,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _guardarSintoma(
-    String descripcion, 
+  Future<void> _saveSymptom(
+    String description, 
     String? tag, 
     int color, 
-    DateTime fecha,
+    DateTime date,
     String timeOfDay,
   ) async {
     if (tag == null) return;
     
-    final key = _dateToKey(fecha);
+    final key = _dateToKey(date);
     
     final nuevoSintoma = Symptom(
       id: _uuid.v4(),
-      description: descripcion,
+      description: description,
       tag: tag,
       color: color.toString(),
-      date: fecha,
+      date: date,
       timeOfDay: timeOfDay,
     );
 
@@ -430,6 +500,19 @@ class _HomePageState extends State<HomePage> {
               setDialogState(() {
                 selectedTag = newTag;
               });
+            }
+
+            void refreshDialog() {
+              setDialogState(() {
+                // Esto forzará que el diálogo se actualice
+                daySymptoms = _symptoms[key] ?? [];
+              });
+            }
+
+            // Modificar _showTagManagementDialog para que use refreshDialog
+            Future<void> showTagManagement() async {
+              await _showTagManagementDialog(dia);
+              refreshDialog();
             }
 
             bool isButtonEnabled() {
@@ -569,19 +652,14 @@ class _HomePageState extends State<HomePage> {
                             icon: const Icon(Icons.add),
                             tooltip: localizations.newTag,
                             onPressed: () {
-                              _crearEditarTag(context).then((_) {
-                                setDialogState(() {});
-                              });
+                              Navigator.pop(context);
+                              _createEditTag(context, null, dia);
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.settings),
                             tooltip: localizations.manageTags,
-                            onPressed: () {
-                              _mostrarDialogoGestionTags().then((_) {
-                                setDialogState(() {});
-                              });
-                            },
+                            onPressed: () => showTagManagement(),
                           ),
                         ],
                       ),
@@ -619,7 +697,7 @@ class _HomePageState extends State<HomePage> {
                             (tag) => tag.name == selectedTag
                           ).color;
                           
-                          await _guardarSintoma(
+                          await _saveSymptom(
                             controlador.text,
                             selectedTag,
                             tagColor,
@@ -867,7 +945,7 @@ class _HomePageState extends State<HomePage> {
                           icon: const Icon(Icons.add),
                           tooltip: localizations.newTag,
                           onPressed: () {
-                            _crearEditarTag(context).then((_) {
+                            _createEditTag(context).then((_) {
                               setEditDialogState(() {});
                             });
                           },
@@ -876,7 +954,7 @@ class _HomePageState extends State<HomePage> {
                           icon: const Icon(Icons.settings),
                           tooltip: localizations.manageTags,
                           onPressed: () {
-                            _mostrarDialogoGestionTags().then((_) {
+                            _showTagManagementDialog().then((_) {
                               setEditDialogState(() {});
                             });
                           },
@@ -1154,6 +1232,49 @@ class _HomePageState extends State<HomePage> {
                         symptoms: _symptoms,
                         tags: _tags,
                         userName: widget.user.name,
+                        onAddTag: (name, color) {
+                          setState(() {
+                            _tags.add(SymptomTag(
+                              id: _uuid.v4(),
+                              name: name,
+                              color: color,
+                            ));
+                          });
+                          _saveTags();
+                        },
+                        onDeleteTag: (tag) {
+                          setState(() {
+                            _tags.removeWhere((t) => t.name == tag.name);
+                          });
+                          _saveTags();
+                        },
+                        onEditTag: (tag, newName, newColor) {
+                          setState(() {
+                            // Actualizar la etiqueta
+                            final index = _tags.indexWhere((t) => t.name == tag.name);
+                            if (index != -1) {
+                              _tags[index] = SymptomTag(
+                                id: tag.id,
+                                name: newName,
+                                color: newColor,
+                              );
+
+                              // Actualizar todos los síntomas que usan esta etiqueta
+                              _symptoms.forEach((date, symptoms) {
+                                for (var i = 0; i < symptoms.length; i++) {
+                                  if (symptoms[i].tag == tag.name) {
+                                    symptoms[i] = symptoms[i].copyWith(
+                                      color: newColor.toString(),
+                                      tag: newName,
+                                    );
+                                  }
+                                }
+                              });
+                            }
+                          });
+                          _saveTags();
+                          _saveSymptoms(); // Guardar también los síntomas actualizados
+                        },
                       ),
                     ),
                   );

@@ -56,5 +56,34 @@
     "profileColorLabel": "Color del perfil:",
     "deleteProfileTitle": "Esborrar Perfil",
     "tagName": "Nom de l'etiqueta",
-    "editTag": "Editar Etiqueta"
+    "editTag": "Editar Etiqueta",
+    "deleteTag": "Eliminar Etiqueta",
+    "deleteTagConfirmation": "Estàs segur que vols eliminar l'etiqueta \"{tagName}\"? Aquesta acció no es pot desfer.",
+    "@deleteTagConfirmation": {
+        "placeholders": {
+            "tagName": {
+                "type": "String"
+            }
+        }
+    },
+    "addNewTag": "Afegir Nova Etiqueta",
+    "january": "Gener",
+    "february": "Febrer",
+    "march": "Març",
+    "april": "Abril",
+    "may": "Maig",
+    "june": "Juny",
+    "july": "Juliol",
+    "august": "Agost",
+    "september": "Setembre",
+    "october": "Octubre",
+    "november": "Novembre",
+    "december": "Desembre",
+    "profileColor": "Color del perfil:",
+    "deleteProfileConfirmation": "Estàs segur que vols eliminar el perfil de {name}? Aquesta acció no es pot desfer.",
+    "@deleteProfileConfirmation": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    }
 } 

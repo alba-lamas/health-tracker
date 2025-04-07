@@ -120,5 +120,15 @@
     "editSymptomDescription": "Describe the symptom",
     "profileColorLabel": "Profile color:",
     "tagName": "Tag name",
-    "editTag": "Edit Tag"
+    "editTag": "Edit Tag",
+    "deleteTag": "Delete Tag",
+    "deleteTagConfirmation": "Are you sure you want to delete the tag \"{tagName}\"? This action cannot be undone.",
+    "@deleteTagConfirmation": {
+        "placeholders": {
+            "tagName": {
+                "type": "String"
+            }
+        }
+    },
+    "addNewTag": "Add New Tag"
 } 
