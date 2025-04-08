@@ -1,6 +1,6 @@
 name: health_tracker
 description: A Flutter application for tracking health symptoms
-version: 1.0.0+1  # Versión inicial
+version: 1.0.0+2  # Incrementamos el version_code
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
