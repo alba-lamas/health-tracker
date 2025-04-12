@@ -85,5 +85,6 @@
         "placeholders": {
             "name": { "type": "String" }
         }
-    }
+    },
+    "noSymptomsRegistered": "No hay síntomas registrados para este día"
 } 

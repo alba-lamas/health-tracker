@@ -130,5 +130,6 @@
             }
         }
     },
-    "addNewTag": "Add New Tag"
+    "addNewTag": "Add New Tag",
+    "noSymptomsRegistered": "No symptoms registered for this day"
 } 
