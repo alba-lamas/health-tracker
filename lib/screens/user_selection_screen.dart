@@ -329,71 +329,84 @@ class _UserSelectionScreenState extends State<UserSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.selectProfile),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: widget.users.isEmpty
-              ? Center(
-                  child: Text(localizations.noProfiles),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: widget.users.length,
-                  itemBuilder: (context, index) {
-                    final user = widget.users[index];
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          child: user.photoPath != null
-                            ? ClipOval(
-                                child: Image.file(
-                                  File(user.photoPath!),
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Text(
-                                user.name[0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                        ),
-                        title: Text(user.name),
-                        onTap: () => widget.onUserSelected(user),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _editUser(user),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _confirmDelete(user),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+      body: widget.users.isEmpty
+        ? Center(  // Si no hay usuarios, centrar todo
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  localizations.noProfiles,
+                  style: const TextStyle(fontSize: 16),
                 ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.person_add),
-              label: Text(localizations.createNewProfile),
-              onPressed: _createNewUser,
+                const SizedBox(height: 16),  // Espacio entre texto y botón
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: Text(localizations.createNewProfile),
+                  onPressed: () => _createNewUser(),
+                ),
+              ],
             ),
+          )
+        : Stack(  // Si hay usuarios, mantener el diseño actual
+            children: [
+              ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: widget.users.length,
+                itemBuilder: (context, index) {
+                  final user = widget.users[index];
+                  return Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        child: user.photoPath != null
+                          ? ClipOval(
+                              child: Image.file(
+                                File(user.photoPath!),
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Text(
+                              user.name[0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                      ),
+                      title: Text(user.name),
+                      onTap: () => widget.onUserSelected(user),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () => _editUser(user),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _confirmDelete(user),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  onPressed: () => _createNewUser(),
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 } 

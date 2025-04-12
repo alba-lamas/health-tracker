@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0+4] - 2024-03-19
+
+## [1.0.0+3] - 2024-05-12
 
 ### Added
 - Symptom intensity tracking (mild, moderate, strong)
@@ -13,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Existing symptoms default to moderate intensity
-
-## [1.0.0+3] - 2024-03-19
+- Improved first-time user experience with centered "Create Profile" button
+- No default time selection for new symptoms
+- Intensity selection required before saving symptoms
 
 ### Fixed
 - Black screen issue when adding/editing tags from symptoms dialog
@@ -27,8 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added date listing when attempting to delete used tags
 - Made statistics screen header consistent with main screen
 - Removed redundant tag management from statistics screen
+- Save button now enables correctly when all required fields are filled, regardless of order
+- Calendar now updates immediately after adding new symptoms
 
-## [1.0.0+2] - 2024-03-19
+
+## [1.0.0+2]
 
 ### Added
 - Tag management system with color selection
@@ -44,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - UI refresh issues when managing tags
 - Proper state management in dialogs
 
-## [1.0.0+1] - 2024-03-18
+## [1.0.0+1]
 
 ### Added
 - Initial release

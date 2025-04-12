@@ -58,7 +58,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Crear el tema basado en el color del usuario
+    // Create theme based on user color
     final ThemeData theme = _selectedUser != null
       ? ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -87,7 +87,7 @@ class _MyAppState extends State<MyApp> {
         Locale('es'), // Spanish
         Locale('ca'), // Catalan
       ],
-      theme: theme,  // Usar el tema personalizado
+      theme: theme,  // Use custom theme
       home: Builder(
         builder: (context) => _selectedUser == null
           ? UserSelectionScreen(
@@ -139,15 +139,15 @@ class _HomePageState extends State<HomePage> {
   List<SymptomTag> _tags = [];
   int selectedIntensity = 2;
 
-  String get _userSymptomsKey => 'symptoms_${widget.user.id}';  // Clave única por usuario
-  String get _userTagsKey => 'tags_${widget.user.id}';         // Clave única por usuario
+  String get _userSymptomsKey => 'symptoms_${widget.user.id}';  // Use unique key
+  String get _userTagsKey => 'tags_${widget.user.id}';         // Use unique key
 
   @override
   void initState() {
     super.initState();
     _loadSymptoms();
     _loadTags().then((_) {
-      // Si no hay etiquetas guardadas, crear las predefinidas
+      // If there are no saved tags, create default ones
       if (_tags.isEmpty) {
         final localizations = AppLocalizations.of(context)!;
         setState(() {
@@ -169,7 +169,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ];
         });
-        _saveTags();  // Guardar las etiquetas predefinidas
+        _saveTags();  // Save default tags
       }
     });
   }
@@ -180,7 +180,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadSymptoms() async {
     final prefs = await _prefsInstance;
-    final symptomsString = prefs.getString(_userSymptomsKey);  // Usar clave única
+    final symptomsString = prefs.getString(_userSymptomsKey);  // Use unique key
     if (symptomsString != null) {
       try {
         final Map<String, dynamic> decodedData = json.decode(symptomsString);
@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
       final symptomsJson = _symptoms.map(
         (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
       );
-      await prefs.setString(_userSymptomsKey, json.encode(symptomsJson));  // Usar clave única
+      await prefs.setString(_userSymptomsKey, json.encode(symptomsJson));  // Use unique key
     } catch (e) {
       debugPrint('Error saving symptoms: $e');
     }
@@ -216,7 +216,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadTags() async {
     final prefs = await _prefsInstance;
-    final tagsString = prefs.getString(_userTagsKey);  // Usar clave única
+    final tagsString = prefs.getString(_userTagsKey);  // Use unique key
     if (tagsString != null) {
       try {
         final List<dynamic> decodedData = json.decode(tagsString);
@@ -234,7 +234,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveTags() async {
     final prefs = await _prefsInstance;
     try {
-      await prefs.setString(_userTagsKey, json.encode(_tags.map((e) => e.toJson()).toList()));  // Usar clave única
+      await prefs.setString(_userTagsKey, json.encode(_tags.map((e) => e.toJson()).toList()));  // Use unique key
     } catch (e) {
       debugPrint('Error saving tags: $e');
     }
@@ -242,8 +242,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _clearData() async {
     final prefs = await _prefsInstance;
-    await prefs.remove(_userSymptomsKey);  // Limpiar solo los datos del usuario actual
-    await prefs.remove(_userTagsKey);      // Limpiar solo los datos del usuario actual
+    await prefs.remove(_userSymptomsKey);  // Clean only current user data
+    await prefs.remove(_userTagsKey);      // Clean only current user data
     setState(() {
       _tags = [];
       _symptoms = {};
@@ -413,7 +413,7 @@ class _HomePageState extends State<HomePage> {
                               color: selectedColor.value,
                             );
 
-                            // Actualizar todos los síntomas que usan esta etiqueta
+                            // Actualizar todos los symptoms that use this tag
                             _symptoms.forEach((date, symptoms) {
                               for (var i = 0; i < symptoms.length; i++) {
                                 if (symptoms[i].tag == existingTag.name) {
@@ -475,10 +475,10 @@ class _HomePageState extends State<HomePage> {
 
     await _saveSymptoms();
     
-    // Volver a mostrar el diálogo de síntomas actualizado
+    // Volver a mostrar el dialog of symptoms updated
     if (mounted) {
-      Navigator.of(context).pop();  // Cerrar el diálogo de nuevo síntoma
-      _showSymptomsDialog(date);    // Mostrar el diálogo de síntomas registrados
+      Navigator.of(context).pop();  // Close the new symptom dialog
+      _showSymptomsDialog(date);    // Show the dialog of registered symptoms
     }
   }
 
@@ -636,8 +636,8 @@ class _HomePageState extends State<HomePage> {
     final localizations = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: symptomToEdit?.description ?? savedDescription ?? '');
     String? selectedTag = symptomToEdit?.tag;
-    String selectedTime = symptomToEdit?.timeOfDay ?? savedTime ?? 'allday';
-    int selectedIntensity = symptomToEdit?.intensity ?? 2;
+    String selectedTime = symptomToEdit?.timeOfDay ?? savedTime ?? '';
+    int selectedIntensity = symptomToEdit?.intensity ?? 0;
 
     showDialog(
       context: context,
@@ -690,7 +690,7 @@ class _HomePageState extends State<HomePage> {
                                   showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setDialogState(() {
-                                      selectedTime = selected ? 'morning' : 'allday';
+                                      selectedTime = selected ? 'morning' : '';
                                     });
                                   },
                                 ),
@@ -718,7 +718,7 @@ class _HomePageState extends State<HomePage> {
                                   showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setDialogState(() {
-                                      selectedTime = selected ? 'afternoon' : 'allday';
+                                      selectedTime = selected ? 'afternoon' : '';
                                     });
                                   },
                                 ),
@@ -746,7 +746,7 @@ class _HomePageState extends State<HomePage> {
                                   showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setDialogState(() {
-                                      selectedTime = selected ? 'night' : 'allday';
+                                      selectedTime = selected ? 'night' : '';
                                     });
                                   },
                                 ),
@@ -887,40 +887,33 @@ class _HomePageState extends State<HomePage> {
                   child: Text(localizations.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: selectedTag == null || controller.text.isEmpty ? null : () async {
-                    final tagColor = _tags.firstWhere(
-                      (tag) => tag.name == selectedTag
-                    ).color;
-
-                    if (symptomToEdit == null) {
-                      await _saveSymptom(
-                        controller.text,
-                        selectedTag,
-                        tagColor,
-                        dia,
-                        selectedTime,
-                        selectedIntensity,
-                      );
-                    } else {
-                      setState(() {
+                  onPressed: (controller.text.isNotEmpty && 
+                              selectedTag != null && 
+                              selectedTime.isNotEmpty &&
+                              selectedIntensity > 0)
+                    ? () {
                         final key = _dateToKey(dia);
-                        final index = _symptoms[key]!.indexWhere((s) => s.id == symptomToEdit.id);
-                        _symptoms[key]![index] = Symptom(
-                          id: symptomToEdit.id,
-                          description: controller.text,
-                          tag: selectedTag!,
-                          color: tagColor.toString(),
-                          date: dia,
-                          timeOfDay: selectedTime,
-                          intensity: selectedIntensity,
-                        );
-                      });
-                      await _saveSymptoms();
-                    }
-                    
-                    Navigator.pop(context);
-                    _showSymptomsDialog(dia);
-                  },
+                        if (!_symptoms.containsKey(key)) {
+                          _symptoms[key] = [];
+                        }
+
+                        setState(() {
+                          _symptoms[key]!.add(Symptom(
+                            id: _uuid.v4(),
+                            description: controller.text,
+                            tag: selectedTag!,
+                            color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                            date: dia,
+                            timeOfDay: selectedTime,
+                            intensity: selectedIntensity,
+                          ));
+                        });
+
+                        _saveSymptoms();
+                        Navigator.of(context).pop();
+                        _showSymptomsDialog(dia);
+                      }
+                    : null,
                   child: Text(localizations.save),
                 ),
               ],
@@ -1132,28 +1125,33 @@ class _HomePageState extends State<HomePage> {
                   child: Text(localizations.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: selectedTag == null || controlador.text.isEmpty ? null : () {
-                    final tagColor = _tags.firstWhere(
-                      (tag) => tag.name == selectedTag
-                    ).color;
-                    
-                    setState(() {
-                      final key = _dateToKey(dia);
-                      final index = _symptoms[key]!.indexWhere((s) => s.id == sintoma.id);
-                      _symptoms[key]![index] = Symptom(
-                        id: sintoma.id,
-                        description: controlador.text,
-                        tag: selectedTag!,
-                        color: tagColor.toString(),
-                        date: sintoma.date,
-                        timeOfDay: selectedTime,  // Guardar el nuevo horario
-                      );
-                    });
-                    
-                    _saveSymptoms();
-                    Navigator.of(context).pop();
-                    setDialogState(() {});
-                  },
+                  onPressed: (controlador.text.isNotEmpty && 
+                              selectedTag != null && 
+                              selectedTime.isNotEmpty)  // Only validate description, tag and time
+                    ? () {
+                        final tagColor = _tags.firstWhere(
+                          (tag) => tag.name == selectedTag
+                        ).color;
+                        
+                        setState(() {
+                          final key = _dateToKey(dia);
+                          final index = _symptoms[key]!.indexWhere((s) => s.id == sintoma.id);
+                          _symptoms[key]![index] = Symptom(
+                            id: sintoma.id,
+                            description: controlador.text,
+                            tag: selectedTag!,
+                            color: tagColor.toString(),
+                            date: sintoma.date,
+                            timeOfDay: selectedTime,
+                            intensity: selectedIntensity,
+                          );
+                        });
+                        
+                        _saveSymptoms();
+                        Navigator.of(context).pop();
+                        setDialogState(() {});
+                      }
+                    : null,
                   child: Text(localizations.save),
                 ),
               ],
@@ -1223,7 +1221,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const SizedBox(width: 16),  // Espacio al final
+          const SizedBox(width: 16),  // Space at the end
         ],
       ),
       body: SafeArea(
@@ -1267,7 +1265,7 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.deepPurple,
                       shape: BoxShape.circle,
                     ),
-                    // Marcar días con síntomas
+                    // Mark days with symptoms
                     markerDecoration: const BoxDecoration(
                       color: Colors.red,
                       shape: BoxShape.circle,
@@ -1392,12 +1390,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _deleteTag(SymptomTag tag, Function setState) async {
     final localizations = AppLocalizations.of(context)!;
     
-    // Buscar todos los síntomas que usan esta etiqueta
+    // Buscar todos los symptoms that use this tag
     Map<String, List<DateTime>> usedDates = {};
     _symptoms.forEach((dateKey, symptoms) {
       final datesWithTag = symptoms
           .where((s) => s.tag == tag.name)
-          .map((s) => s.date)  // Usar la fecha del síntoma directamente
+          .map((s) => s.date)  // Use the date directly
           .toList();
       if (datesWithTag.isNotEmpty) {
         usedDates[dateKey] = datesWithTag;
@@ -1405,14 +1403,14 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (usedDates.isEmpty) {
-      // Si la etiqueta no está en uso, borrarla directamente
+      // If the tag is not in use, delete it directly
       this.setState(() {
         _tags.remove(tag);
       });
       _saveTags();
       setState(() {});
     } else {
-      // Si la etiqueta está en uso, mostrar diálogo de advertencia
+      // If the tag is in use, show warning dialog
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -1427,7 +1425,7 @@ class _HomePageState extends State<HomePage> {
                 Text(localizations.datesWithTag),
                 const SizedBox(height: 4),
                 ...usedDates.entries.map((entry) {
-                  final date = entry.value.first;  // Tomamos la primera fecha de la lista
+                  final date = entry.value.first;  // Take the first date from the list
                   return Text(
                     '• ${DateFormat('d/M/y').format(date)}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1468,7 +1466,7 @@ class ShapeMarkerPainter extends CustomPainter {
 
     switch (timeOfDay) {
       case 'morning':
-        // Flecha hacia arriba (triángulo)
+        // Upward arrow (triangle)
         final path = Path()
           ..moveTo(size.width / 2, 0)
           ..lineTo(size.width, size.height)
@@ -1477,7 +1475,7 @@ class ShapeMarkerPainter extends CustomPainter {
         canvas.drawPath(path, paint);
         break;
       case 'afternoon':
-        // Flecha hacia abajo (triángulo invertido)
+        // Downward arrow (inverted triangle)
         final path = Path()
           ..moveTo(0, 0)
           ..lineTo(size.width, 0)
@@ -1486,7 +1484,7 @@ class ShapeMarkerPainter extends CustomPainter {
         canvas.drawPath(path, paint);
         break;
       case 'night':
-        // Media luna
+        // Crescent moon
         final outerCircle = Path()
           ..addArc(
             Rect.fromLTWH(0, 0, size.width, size.height),
@@ -1505,7 +1503,7 @@ class ShapeMarkerPainter extends CustomPainter {
         );
         break;
       default:
-        // Círculo completo para "todo el día"
+        // Full circle for "all day"
         canvas.drawCircle(
           Offset(size.width / 2, size.height / 2),
           size.width / 2,
