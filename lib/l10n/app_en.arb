@@ -136,5 +136,10 @@
     "tagInUseMessage": "This tag is currently in use in the following dates:",
     "datesWithTag": "Dates using this tag:",
     "changeTagsBeforeDelete": "Please change the tag in these symptoms before deleting it.",
-    "ok": "OK"
+    "ok": "OK",
+    "intensity": "Intensity",
+    "intensityMild": "Mild",
+    "intensityModerate": "Moderate",
+    "intensityStrong": "Strong",
+    "night": "Night"
 } 

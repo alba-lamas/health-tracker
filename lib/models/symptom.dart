@@ -4,7 +4,8 @@ class Symptom {
   final String tag;
   final String color;
   final DateTime date;
-  final String timeOfDay; // 'morning', 'afternoon', 'allday'
+  final String timeOfDay; // 'morning', 'afternoon', 'night', 'allday'
+  final int intensity;  // Nueva propiedad: 1 (leve), 2 (medio), 3 (fuerte)
 
   Symptom({
     required this.id,
@@ -13,6 +14,7 @@ class Symptom {
     required this.color,
     required this.date,
     required this.timeOfDay,
+    this.intensity = 2,  // Valor por defecto: medio
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class Symptom {
     'color': color,
     'date': date.toIso8601String(),
     'timeOfDay': timeOfDay,
+    'intensity': intensity,
   };
 
   factory Symptom.fromJson(Map<String, dynamic> json) => Symptom(
@@ -31,6 +34,7 @@ class Symptom {
     color: json['color'],
     date: DateTime.parse(json['date']),
     timeOfDay: json['timeOfDay'] ?? 'allday', // valor por defecto para compatibilidad
+    intensity: json['intensity'] ?? 2,  // Si no existe, usar valor medio
   );
 
   Symptom copyWith({
@@ -40,6 +44,7 @@ class Symptom {
     String? color,
     DateTime? date,
     String? timeOfDay,
+    int? intensity,
   }) {
     return Symptom(
       id: id ?? this.id,
@@ -48,6 +53,7 @@ class Symptom {
       color: color ?? this.color,
       date: date ?? this.date,
       timeOfDay: timeOfDay ?? this.timeOfDay,
+      intensity: intensity ?? this.intensity,
     );
   }
 } 

@@ -91,5 +91,10 @@
     "tagInUseMessage": "Esta etiqueta está siendo utilizada en las siguientes fechas:",
     "datesWithTag": "Fechas que usan esta etiqueta:",
     "changeTagsBeforeDelete": "Por favor, cambia la etiqueta en estos síntomas antes de eliminarla.",
-    "ok": "Aceptar"
+    "ok": "Aceptar",
+    "intensity": "Intensidad",
+    "intensityMild": "Leve",
+    "intensityModerate": "Moderada",
+    "intensityStrong": "Fuerte",
+    "night": "Noche"
 } 

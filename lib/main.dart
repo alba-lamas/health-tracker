@@ -137,6 +137,7 @@ class _HomePageState extends State<HomePage> {
   final _prefsInstance = SharedPreferences.getInstance();
   final _uuid = const Uuid();
   List<SymptomTag> _tags = [];
+  int selectedIntensity = 2;
 
   String get _userSymptomsKey => 'symptoms_${widget.user.id}';  // Clave única por usuario
   String get _userTagsKey => 'tags_${widget.user.id}';         // Clave única por usuario
@@ -449,6 +450,7 @@ class _HomePageState extends State<HomePage> {
     int color, 
     DateTime date,
     String timeOfDay,
+    int intensity,
   ) async {
     if (tag == null) return;
     
@@ -461,6 +463,7 @@ class _HomePageState extends State<HomePage> {
       color: color.toString(),
       date: date,
       timeOfDay: timeOfDay,
+      intensity: intensity,
     );
 
     setState(() {
@@ -488,14 +491,13 @@ class _HomePageState extends State<HomePage> {
       case 'afternoon':
         icon = Icons.wb_twilight;
         break;
+      case 'night':
+        icon = Icons.nightlight;  // o Icons.bedtime
+        break;
       default:
         icon = Icons.schedule;
     }
-    return Icon(
-      icon,
-      size: 18,
-      color: Colors.grey,
-    );
+    return Icon(icon, size: 18, color: Colors.grey);
   }
 
   Widget _buildCalendarMarker(String timeOfDay) {
@@ -507,6 +509,25 @@ class _HomePageState extends State<HomePage> {
         timeOfDay: timeOfDay,
       ),
     );
+  }
+
+  Widget _buildIntensityIcon(int intensity) {
+    IconData icon;
+    Color color;
+    switch (intensity) {
+      case 1:
+        icon = Icons.arrow_downward;
+        color = Colors.green;
+        break;
+      case 3:
+        icon = Icons.arrow_upward;
+        color = Colors.red;
+        break;
+      default:
+        icon = Icons.remove;
+        color = Colors.orange;
+    }
+    return Icon(icon, size: 18, color: color);
   }
 
   void _showSymptomsDialog(DateTime dia) {
@@ -565,6 +586,8 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildTimeIcon(symptom.timeOfDay),
+                                    const SizedBox(width: 4),
+                                    _buildIntensityIcon(symptom.intensity),
                                     IconButton(
                                       icon: const Icon(Icons.edit),
                                       onPressed: () {
@@ -614,6 +637,7 @@ class _HomePageState extends State<HomePage> {
     final controller = TextEditingController(text: symptomToEdit?.description ?? savedDescription ?? '');
     String? selectedTag = symptomToEdit?.tag;
     String selectedTime = symptomToEdit?.timeOfDay ?? savedTime ?? 'allday';
+    int selectedIntensity = symptomToEdit?.intensity ?? 2;
 
     showDialog(
       context: context,
@@ -657,17 +681,13 @@ class _HomePageState extends State<HomePage> {
                                         color: selectedTime == 'morning' ? Colors.grey[800] : Colors.grey[400],
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        localizations.morning,
-                                        style: TextStyle(
-                                          color: selectedTime == 'morning' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
+                                      Text(localizations.morning),
                                     ],
                                   ),
                                   selected: selectedTime == 'morning',
                                   selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setDialogState(() {
                                       selectedTime = selected ? 'morning' : 'allday';
@@ -689,20 +709,44 @@ class _HomePageState extends State<HomePage> {
                                         color: selectedTime == 'afternoon' ? Colors.grey[800] : Colors.grey[400],
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        localizations.afternoon,
-                                        style: TextStyle(
-                                          color: selectedTime == 'afternoon' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
+                                      Text(localizations.afternoon),
                                     ],
                                   ),
                                   selected: selectedTime == 'afternoon',
                                   selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setDialogState(() {
                                       selectedTime = selected ? 'afternoon' : 'allday';
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.nightlight,
+                                        size: 18,
+                                        color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[400],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(localizations.night),
+                                    ],
+                                  ),
+                                  selected: selectedTime == 'night',
+                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
+                                  onSelected: (bool selected) {
+                                    setDialogState(() {
+                                      selectedTime = selected ? 'night' : 'allday';
                                     });
                                   },
                                 ),
@@ -733,6 +777,7 @@ class _HomePageState extends State<HomePage> {
                           selected: selectedTime == 'allday',
                           selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                           backgroundColor: Colors.transparent,
+                          showCheckmark: false,
                           onSelected: (bool selected) {
                             setDialogState(() {
                               selectedTime = 'allday';
@@ -785,6 +830,51 @@ class _HomePageState extends State<HomePage> {
                         },
                       )).toList(),
                     ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text(localizations.intensity),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ChoiceChip(
+                          label: Text(localizations.intensityMild),
+                          selected: selectedIntensity == 1,
+                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                          backgroundColor: Colors.transparent,
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              selectedIntensity = selected ? 1 : 2;
+                            });
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text(localizations.intensityModerate),
+                          selected: selectedIntensity == 2,
+                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                          backgroundColor: Colors.transparent,
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              selectedIntensity = 2;
+                            });
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text(localizations.intensityStrong),
+                          selected: selectedIntensity == 3,
+                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                          backgroundColor: Colors.transparent,
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              selectedIntensity = selected ? 3 : 2;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -809,6 +899,7 @@ class _HomePageState extends State<HomePage> {
                         tagColor,
                         dia,
                         selectedTime,
+                        selectedIntensity,
                       );
                     } else {
                       setState(() {
@@ -821,6 +912,7 @@ class _HomePageState extends State<HomePage> {
                           color: tagColor.toString(),
                           date: dia,
                           timeOfDay: selectedTime,
+                          intensity: selectedIntensity,
                         );
                       });
                       await _saveSymptoms();
@@ -900,6 +992,7 @@ class _HomePageState extends State<HomePage> {
                                   selected: selectedTime == 'morning',
                                   selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setEditDialogState(() {
                                       selectedTime = selected ? 'morning' : 'allday';
@@ -932,6 +1025,7 @@ class _HomePageState extends State<HomePage> {
                                   selected: selectedTime == 'afternoon',
                                   selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
                                   onSelected: (bool selected) {
                                     setEditDialogState(() {
                                       selectedTime = selected ? 'afternoon' : 'allday';
@@ -965,6 +1059,7 @@ class _HomePageState extends State<HomePage> {
                           selected: selectedTime == 'allday',
                           selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                           backgroundColor: Colors.transparent,
+                          showCheckmark: false,
                           onSelected: (bool selected) {
                             setEditDialogState(() {
                               selectedTime = 'allday';
@@ -1371,41 +1466,54 @@ class ShapeMarkerPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..strokeWidth = 2.0;
 
-    // Hacemos el área de dibujo un poco más grande para las flechas
-    final drawingSize = size * 1.2;  // 20% más grande
-    final center = Offset(size.width / 2, size.height / 2);
-
     switch (timeOfDay) {
       case 'morning':
-        // Flecha hacia arriba
-        final path = Path();
-        // Punta de la flecha más grande
-        path.moveTo(center.dx, center.dy - drawingSize.height / 2);  // Punto superior
-        path.lineTo(center.dx - drawingSize.width / 2, center.dy);   // Punto izquierdo
-        path.lineTo(center.dx + drawingSize.width / 2, center.dy);   // Punto derecho
-        path.close();
+        // Flecha hacia arriba (triángulo)
+        final path = Path()
+          ..moveTo(size.width / 2, 0)
+          ..lineTo(size.width, size.height)
+          ..lineTo(0, size.height)
+          ..close();
         canvas.drawPath(path, paint);
         break;
-      
       case 'afternoon':
-        // Flecha hacia abajo
-        final path = Path();
-        // Punta de la flecha más grande
-        path.moveTo(center.dx, center.dy + drawingSize.height / 2);  // Punto inferior
-        path.lineTo(center.dx - drawingSize.width / 2, center.dy);   // Punto izquierdo
-        path.lineTo(center.dx + drawingSize.width / 2, center.dy);   // Punto derecho
-        path.close();
+        // Flecha hacia abajo (triángulo invertido)
+        final path = Path()
+          ..moveTo(0, 0)
+          ..lineTo(size.width, 0)
+          ..lineTo(size.width / 2, size.height)
+          ..close();
         canvas.drawPath(path, paint);
         break;
-      
+      case 'night':
+        // Media luna
+        final outerCircle = Path()
+          ..addArc(
+            Rect.fromLTWH(0, 0, size.width, size.height),
+            0,
+            3.14 * 2,
+          );
+        final innerCircle = Path()
+          ..addArc(
+            Rect.fromLTWH(size.width * 0.2, 0, size.width, size.height),
+            0,
+            3.14 * 2,
+          );
+        canvas.drawPath(
+          Path.combine(PathOperation.difference, outerCircle, innerCircle),
+          paint,
+        );
+        break;
       default:
-        // Círculo (todo el día) - mantenemos el mismo tamaño que las flechas
-        canvas.drawCircle(center, drawingSize.width / 2.5, paint);
+        // Círculo completo para "todo el día"
+        canvas.drawCircle(
+          Offset(size.width / 2, size.height / 2),
+          size.width / 2,
+          paint,
+        );
     }
   }
 
   @override
-  bool shouldRepaint(ShapeMarkerPainter oldDelegate) {
-    return color != oldDelegate.color || timeOfDay != oldDelegate.timeOfDay;
-  }
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 } 

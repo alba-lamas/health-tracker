@@ -278,21 +278,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         BarChartData(
                           alignment: BarChartAlignment.spaceAround,
                           maxY: maxValue.toDouble(),
-                          barGroups: activeTags.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final tag = entry.value;
-                            return BarChartGroupData(
-                              x: index,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: tagFrequency[tag.name]?.toDouble() ?? 0,
-                                  color: Color(tag.color),
-                                  width: 20,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                          barGroups: _generateBarGroups(),
                           titlesData: FlTitlesData(
                             show: true,
                             bottomTitles: AxisTitles(
@@ -352,50 +338,47 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              ...filteredSymptoms.map((symptom) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Card(
-                  child: ListTile(
-                    leading: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Color(int.parse(symptom.color)),
-                        shape: BoxShape.circle,
+              if (filteredSymptoms.isEmpty)
+                Text(
+                  localizations.noRecordsForPeriod,
+                  style: const TextStyle(fontStyle: FontStyle.italic),
+                )
+              else
+                ...groupSymptomsByDate(filteredSymptoms).entries.map((entry) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        '${entry.key.day}/${entry.key.month}/${entry.key.year}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                    title: Text(symptom.description),
-                    subtitle: Row(
-                      children: [
-                        Text(
-                          '${symptom.date.day}/${symptom.date.month}/${symptom.date.year}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                    ...entry.value.map((symptom) => ListTile(
+                      leading: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Color(int.parse(symptom.color)),
+                          shape: BoxShape.circle,
                         ),
-                        const Text(' - '),
-                        Text(symptom.tag),
-                        const Spacer(),
-                        Icon(
-                          symptom.timeOfDay == 'morning'
-                            ? Icons.wb_sunny_outlined
-                            : symptom.timeOfDay == 'afternoon'
-                              ? Icons.wb_twilight
-                              : Icons.schedule,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          symptom.timeOfDay == 'morning'
-                            ? localizations.morning
-                            : symptom.timeOfDay == 'afternoon'
-                              ? localizations.afternoon
-                              : localizations.allDay,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )).toList(),
+                      ),
+                      title: Text(symptom.description),
+                      subtitle: Text(symptom.tag),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildTimeIcon(symptom.timeOfDay),
+                          const SizedBox(width: 4),
+                          _buildIntensityIcon(symptom.intensity),
+                        ],
+                      ),
+                    )),
+                  ],
+                )),
             ],
           ),
         ),
@@ -447,5 +430,169 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // Ordenar por fecha más reciente primero
     filtered.sort((a, b) => b.date.compareTo(a.date));
     return filtered;
+  }
+
+  // Añadir este método para construir el icono de intensidad
+  Widget _buildIntensityIcon(int intensity) {
+    IconData icon;
+    Color color;
+    switch (intensity) {
+      case 1:
+        icon = Icons.arrow_downward;
+        color = Colors.green;
+        break;
+      case 3:
+        icon = Icons.arrow_upward;
+        color = Colors.red;
+        break;
+      default:
+        icon = Icons.remove;
+        color = Colors.orange;
+    }
+    return Icon(icon, size: 18, color: color);
+  }
+
+  // Añadir este método para construir el icono de tiempo
+  Widget _buildTimeIcon(String timeOfDay) {
+    IconData icon;
+    Color color;
+    switch (timeOfDay) {
+      case 'morning':
+        icon = Icons.wb_sunny_outlined;
+        color = Colors.yellow;
+        break;
+      case 'afternoon':
+        icon = Icons.wb_twilight;
+        color = Colors.orange;
+        break;
+      case 'night':
+        icon = Icons.nightlight;
+        color = Colors.blue;
+        break;
+      default:
+        icon = Icons.schedule;
+        color = Colors.blue;
+    }
+    return Icon(icon, size: 18, color: color);
+  }
+
+  // Función helper para agrupar síntomas por fecha
+  Map<DateTime, List<Symptom>> groupSymptomsByDate(List<Symptom> symptoms) {
+    final grouped = <DateTime, List<Symptom>>{};
+    for (var symptom in symptoms) {
+      final date = DateTime(
+        symptom.date.year,
+        symptom.date.month,
+        symptom.date.day,
+      );
+      if (!grouped.containsKey(date)) {
+        grouped[date] = [];
+      }
+      grouped[date]!.add(symptom);
+    }
+    return Map.fromEntries(
+      grouped.entries.toList()
+        ..sort((a, b) => b.key.compareTo(a.key))
+    );
+  }
+
+  // Primero, creamos una estructura para almacenar las frecuencias por intensidad
+  Map<String, Map<int, int>> _calculateTagFrequencyByIntensity() {
+    final Map<String, Map<int, int>> frequency = {};
+    
+    // Inicializar el mapa para todas las etiquetas
+    for (var tag in widget.tags) {
+      frequency[tag.name] = {
+        1: 0,  // leve
+        2: 0,  // moderado
+        3: 0,  // fuerte
+      };
+    }
+
+    // Contar síntomas por etiqueta e intensidad
+    for (var symptom in _getFilteredSymptoms()) {
+      if (frequency.containsKey(symptom.tag)) {  // Verificar que la etiqueta existe
+        final intensityMap = frequency[symptom.tag]!;
+        final intensity = symptom.intensity.clamp(1, 3);  // Asegurar valor válido
+        intensityMap[intensity] = (intensityMap[intensity] ?? 0) + 1;
+      }
+    }
+
+    return frequency;
+  }
+
+  // Luego, modificamos la generación de las barras
+  BarChartGroupData _generateBarGroup(
+    int x,
+    String tagName,
+    Color baseColor,
+    Map<int, int> intensityCount,
+  ) {
+    final leve = intensityCount[1] ?? 0;
+    final moderado = intensityCount[2] ?? 0;
+    final fuerte = intensityCount[3] ?? 0;
+    final total = leve + moderado + fuerte;
+
+    if (total == 0) return BarChartGroupData(x: x, barRods: []);
+
+    // Convertir el color base a HSL para ajustar la luminosidad
+    final hslColor = HSLColor.fromColor(baseColor);
+
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: total.toDouble(),
+          width: 20,
+          borderRadius: BorderRadius.zero,
+          rodStackItems: [
+            // Leve (más claro)
+            BarChartRodStackItem(
+              0,
+              leve.toDouble(),
+              hslColor.withLightness((hslColor.lightness + 0.3).clamp(0.0, 1.0)).toColor(),
+            ),
+            // Moderado (normal)
+            BarChartRodStackItem(
+              leve.toDouble(),
+              (leve + moderado).toDouble(),
+              baseColor,
+            ),
+            // Fuerte (más oscuro)
+            BarChartRodStackItem(
+              (leve + moderado).toDouble(),
+              total.toDouble(),
+              hslColor.withLightness((hslColor.lightness - 0.2).clamp(0.0, 1.0)).toColor(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Y actualizamos la parte donde creamos el gráfico
+  List<BarChartGroupData> _generateBarGroups() {
+    final frequencyByIntensity = _calculateTagFrequencyByIntensity();
+    final activeTags = widget.tags
+        .where((tag) {
+          final intensities = frequencyByIntensity[tag.name];
+          return intensities != null && 
+                 intensities.values.any((count) => count > 0);
+        })
+        .toList();
+
+    return List.generate(
+      activeTags.length,
+      (index) {
+        final tag = activeTags[index];
+        final intensityMap = frequencyByIntensity[tag.name] ?? {1: 0, 2: 0, 3: 0};
+        return _generateBarGroup(
+          index,
+          tag.name,
+          Color(tag.color),
+          intensityMap,
+        );
+      },
+    );
   }
 } 
