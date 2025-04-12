@@ -326,124 +326,119 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _createEditTag(BuildContext context, [SymptomTag? existingTag, DateTime? day]) async {
     final localizations = AppLocalizations.of(context)!;
-    final controlador = TextEditingController(text: existingTag?.name ?? '');
-    Color colorSeleccionado = Color(existingTag?.color ?? Colors.blue.value);
+    final controller = TextEditingController(text: existingTag?.name ?? '');
+    Color selectedColor = Color(existingTag?.color ?? Colors.blue.value);
 
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return WillPopScope(
-              onWillPop: () async => false,
-              child: AlertDialog(
-                title: Text(existingTag == null ? localizations.newTag : localizations.editTag),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: controlador,
-                      decoration: InputDecoration(
-                        labelText: localizations.tagName,
-                        border: const OutlineInputBorder(),
-                      ),
+            return AlertDialog(
+              title: Text(existingTag == null ? localizations.newTag : localizations.editTag),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: localizations.tagName,
+                      border: const OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        Colors.red,
-                        Colors.pink,
-                        Colors.purple,
-                        Colors.deepPurple,
-                        Colors.blue,
-                        Colors.lightBlue,
-                        Colors.cyan,
-                        Colors.teal,
-                        Colors.green,
-                        Colors.lightGreen,
-                        Colors.orange,
-                        Colors.deepOrange,
-                      ].map((color) => GestureDetector(
-                        onTap: () {
-                          setDialogState(() {
-                            colorSeleccionado = color;
-                          });
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          margin: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: color == colorSeleccionado
-                                ? Border.all(color: Colors.black, width: 2)
-                                : null,
-                          ),
-                        ),
-                      )).toList(),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      if (day != null) {
-                        Navigator.of(this.context).pop(); // Cerrar diálogo anterior
-                        _showSymptomsDialog(day);
-                      }
-                    },
-                    child: Text(localizations.cancel),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (controlador.text.isNotEmpty) {
-                        setState(() {
-                          if (existingTag == null) {
-                            _tags.add(SymptomTag(
-                              id: _uuid.v4(),
-                              name: controlador.text,
-                              color: colorSeleccionado.value,
-                            ));
-                          } else {
-                            final index = _tags.indexWhere((t) => t.id == existingTag.id);
-                            if (index != -1) {
-                              _tags[index] = SymptomTag(
-                                id: existingTag.id,
-                                name: controlador.text,
-                                color: colorSeleccionado.value,
-                              );
-
-                              // Actualizar todos los síntomas que usan esta etiqueta
-                              _symptoms.forEach((date, symptoms) {
-                                for (var i = 0; i < symptoms.length; i++) {
-                                  if (symptoms[i].tag == existingTag.name) {
-                                    symptoms[i] = symptoms[i].copyWith(
-                                      color: colorSeleccionado.value.toString(),
-                                      tag: controlador.text,
-                                    );
-                                  }
-                                }
-                              });
-                            }
-                          }
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Colors.red,
+                      Colors.pink,
+                      Colors.purple,
+                      Colors.deepPurple,
+                      Colors.blue,
+                      Colors.lightBlue,
+                      Colors.cyan,
+                      Colors.teal,
+                      Colors.green,
+                      Colors.lightGreen,
+                      Colors.orange,
+                      Colors.deepOrange,
+                    ].map((color) => GestureDetector(
+                      onTap: () {
+                        setDialogState(() {
+                          selectedColor = color;
                         });
-                        _saveTags();
-                        _saveSymptoms(); // Guardar también los síntomas actualizados
-                        Navigator.of(context).pop();
-                        if (day != null) {
-                          Navigator.of(this.context).pop();
-                          _showSymptomsDialog(day);
-                        }
-                      }
-                    },
-                    child: Text(localizations.save),
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: color == selectedColor
+                              ? Border.all(color: Colors.black, width: 2)
+                              : null,
+                        ),
+                      ),
+                    )).toList(),
                   ),
                 ],
               ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    if (day != null) {
+                      _showSymptomsDialog(day);
+                    }
+                  },
+                  child: Text(localizations.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (controller.text.isNotEmpty) {
+                      setState(() {
+                        if (existingTag == null) {
+                          _tags.add(SymptomTag(
+                            id: _uuid.v4(),
+                            name: controller.text,
+                            color: selectedColor.value,
+                          ));
+                        } else {
+                          final index = _tags.indexWhere((t) => t.id == existingTag.id);
+                          if (index != -1) {
+                            _tags[index] = SymptomTag(
+                              id: existingTag.id,
+                              name: controller.text,
+                              color: selectedColor.value,
+                            );
+
+                            // Actualizar todos los síntomas que usan esta etiqueta
+                            _symptoms.forEach((date, symptoms) {
+                              for (var i = 0; i < symptoms.length; i++) {
+                                if (symptoms[i].tag == existingTag.name) {
+                                  symptoms[i] = symptoms[i].copyWith(
+                                    color: selectedColor.value.toString(),
+                                    tag: controller.text,
+                                  );
+                                }
+                              }
+                            });
+                          }
+                        }
+                      });
+                      _saveTags();
+                      _saveSymptoms(); // Guardar también los síntomas actualizados
+                      Navigator.of(dialogContext).pop();
+                      if (day != null) {
+                        _showSymptomsDialog(day);
+                      }
+                    }
+                  },
+                  child: Text(localizations.save),
+                ),
+              ],
             );
           },
         );
