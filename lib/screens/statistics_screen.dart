@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/symptom.dart';
 import '../models/tag.dart';
+import '../models/user.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'dart:io';
 
 class StatisticsScreen extends StatefulWidget {
   final Map<String, List<Symptom>> symptoms;
   final List<SymptomTag> tags;
   final String userName;
-  final Function(String, int) onAddTag;
-  final Function(SymptomTag) onDeleteTag;
-  final Function(SymptomTag, String, int) onEditTag;
+  final User user;
+  final VoidCallback onLogout;
 
   const StatisticsScreen({
     super.key,
     required this.symptoms,
     required this.tags,
     required this.userName,
-    required this.onAddTag,
-    required this.onDeleteTag,
-    required this.onEditTag,
+    required this.user,
+    required this.onLogout,
   });
 
   @override
@@ -163,11 +163,52 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         title: Text(localizations.statisticsOf(widget.userName)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          // Añadir botón para gestionar etiquetas
-          IconButton(
-            icon: const Icon(Icons.label),
-            onPressed: () => _showTagManagementDialog(context),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text(localizations.logoutConfirmation),
+                      content: Text(localizations.logoutMessage(widget.user.name)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(localizations.cancel),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            widget.onLogout();
+                          },
+                          child: Text(localizations.logout),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: CircleAvatar(
+                backgroundColor: Theme.of(context).primaryColor,
+                child: widget.user.photoPath != null
+                  ? ClipOval(
+                      child: Image.file(
+                        File(widget.user.photoPath!),
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Text(
+                      widget.user.name[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+              ),
+            ),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: SingleChildScrollView(  // Añadido para permitir scroll
@@ -406,185 +447,5 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // Ordenar por fecha más reciente primero
     filtered.sort((a, b) => b.date.compareTo(a.date));
     return filtered;
-  }
-
-  void _showTagManagementDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.manageTags),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: widget.tags.length + 1, // +1 para el botón de añadir
-            itemBuilder: (context, index) {
-              if (index == widget.tags.length) {
-                return ListTile(
-                  leading: const Icon(Icons.add),
-                  title: Text(AppLocalizations.of(context)!.newTag),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showAddTagDialog(context);
-                  },
-                );
-              }
-              
-              final tag = widget.tags[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Color(tag.color),
-                  radius: 12,
-                ),
-                title: Text(tag.name),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showEditTagDialog(context, tag);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showDeleteTagConfirmation(context, tag);
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.close),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddTagDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    Color selectedColor = Colors.blue;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.newTag),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.tagName,
-              ),
-            ),
-            const SizedBox(height: 16),
-            BlockPicker(
-              pickerColor: selectedColor,
-              onColorChanged: (color) {
-                selectedColor = color;
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                widget.onAddTag(nameController.text, selectedColor.value);
-                Navigator.pop(context);
-              }
-            },
-            child: Text(AppLocalizations.of(context)!.create),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditTagDialog(BuildContext context, SymptomTag tag) {
-    final TextEditingController nameController = TextEditingController(text: tag.name);
-    Color selectedColor = Color(tag.color);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.editTag),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.tagName,
-              ),
-            ),
-            const SizedBox(height: 16),
-            BlockPicker(
-              pickerColor: selectedColor,
-              onColorChanged: (color) {
-                selectedColor = color;
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                widget.onEditTag(tag, nameController.text, selectedColor.value);
-                Navigator.pop(context);
-              }
-            },
-            child: Text(AppLocalizations.of(context)!.save),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteTagConfirmation(BuildContext context, SymptomTag tag) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.deleteTag),
-        content: Text(
-          AppLocalizations.of(context)!.deleteTagConfirmation(tag.name),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              widget.onDeleteTag(tag);
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: Text(AppLocalizations.of(context)!.delete),
-          ),
-        ],
-      ),
-    );
   }
 } 

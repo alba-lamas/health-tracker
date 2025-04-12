@@ -1280,49 +1280,8 @@ class _HomePageState extends State<HomePage> {
                         symptoms: _symptoms,
                         tags: _tags,
                         userName: widget.user.name,
-                        onAddTag: (name, color) {
-                          setState(() {
-                            _tags.add(SymptomTag(
-                              id: _uuid.v4(),
-                              name: name,
-                              color: color,
-                            ));
-                          });
-                          _saveTags();
-                        },
-                        onDeleteTag: (tag) {
-                          setState(() {
-                            _tags.removeWhere((t) => t.name == tag.name);
-                          });
-                          _saveTags();
-                        },
-                        onEditTag: (tag, newName, newColor) {
-                          setState(() {
-                            // Actualizar la etiqueta
-                            final index = _tags.indexWhere((t) => t.name == tag.name);
-                            if (index != -1) {
-                              _tags[index] = SymptomTag(
-                                id: tag.id,
-                                name: newName,
-                                color: newColor,
-                              );
-
-                              // Actualizar todos los síntomas que usan esta etiqueta
-                              _symptoms.forEach((date, symptoms) {
-                                for (var i = 0; i < symptoms.length; i++) {
-                                  if (symptoms[i].tag == tag.name) {
-                                    symptoms[i] = symptoms[i].copyWith(
-                                      color: newColor.toString(),
-                                      tag: newName,
-                                    );
-                                  }
-                                }
-                              });
-                            }
-                          });
-                          _saveTags();
-                          _saveSymptoms(); // Guardar también los síntomas actualizados
-                        },
+                        user: widget.user,
+                        onLogout: widget.onLogout,
                       ),
                     ),
                   );

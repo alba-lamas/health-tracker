@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed calendar month localization and capitalization
 - Added tag deletion protection when tag is in use
 - Added date listing when attempting to delete used tags
+- Made statistics screen header consistent with main screen
+- Removed redundant tag management from statistics screen
 
 ## [1.0.0+2] - 2024-03-19
 
