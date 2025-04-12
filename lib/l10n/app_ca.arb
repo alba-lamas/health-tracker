@@ -86,5 +86,10 @@
             "name": { "type": "String" }
         }
     },
-    "noSymptomsRegistered": "No hi ha símptomes registrats per a aquest dia"
+    "noSymptomsRegistered": "No hi ha símptomes registrats per a aquest dia",
+    "cannotDeleteTag": "No es pot eliminar l'etiqueta",
+    "tagInUseMessage": "Aquesta etiqueta s'està utilitzant en les següents dates:",
+    "datesWithTag": "Dates que utilitzen aquesta etiqueta:",
+    "changeTagsBeforeDelete": "Si us plau, canvia l'etiqueta en aquests símptomes abans d'eliminar-la.",
+    "ok": "Acceptar"
 } 

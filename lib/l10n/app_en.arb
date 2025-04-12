@@ -131,5 +131,10 @@
         }
     },
     "addNewTag": "Add New Tag",
-    "noSymptomsRegistered": "No symptoms registered for this day"
+    "noSymptomsRegistered": "No symptoms registered for this day",
+    "cannotDeleteTag": "Cannot Delete Tag",
+    "tagInUseMessage": "This tag is currently in use in the following dates:",
+    "datesWithTag": "Dates using this tag:",
+    "changeTagsBeforeDelete": "Please change the tag in these symptoms before deleting it.",
+    "ok": "OK"
 } 

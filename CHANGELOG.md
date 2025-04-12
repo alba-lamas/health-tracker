@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized time selection buttons for better responsiveness
 - Improved visual feedback for selected time buttons
 - Fixed calendar month localization and capitalization
+- Added tag deletion protection when tag is in use
+- Added date listing when attempting to delete used tags
 
 ## [1.0.0+2] - 2024-03-19
 

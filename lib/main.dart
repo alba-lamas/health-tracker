@@ -254,72 +254,69 @@ class _HomePageState extends State<HomePage> {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(localizations.manageTagsTitle),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _tags.length + 1,
-              itemBuilder: (context, index) {
-                if (index == _tags.length) {
-                  return ListTile(
-                    leading: const Icon(Icons.add),
-                    title: Text(localizations.newTag),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _createEditTag(context, null, null, null);
-                    },
-                  );
-                }
-                
-                final tag = _tags[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(tag.color),
-                    radius: 12,
-                  ),
-                  title: Text(tag.name),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(localizations.manageTagsTitle),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _tags.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == _tags.length) {
+                      return ListTile(
+                        leading: const Icon(Icons.add),
+                        title: Text(localizations.newTag),
+                        onTap: () {
                           Navigator.pop(context);
-                          _createEditTag(context, tag, null, null);
+                          _createEditTag(context, null, null, null);
                         },
+                      );
+                    }
+                    
+                    final tag = _tags[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Color(tag.color),
+                        radius: 12,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          setState(() {
-                            _tags.remove(tag);
-                          });
-                          _saveTags();
-                          Navigator.pop(context);
-                          if (day != null) {
-                            _showNewSymptomDialog(day, null, currentDescription, currentTime);
-                          }
-                        },
+                      title: Text(tag.name),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _createEditTag(context, tag, null, null);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              _deleteTag(tag, setState);
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                if (day != null) {
-                  _showNewSymptomDialog(day, null, currentDescription, currentTime);
-                }
-              },
-              child: Text(localizations.close),
-            ),
-          ],
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (day != null) {
+                      _showNewSymptomDialog(day, null, currentDescription, currentTime);
+                    }
+                  },
+                  child: Text(localizations.close),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -1336,6 +1333,66 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _deleteTag(SymptomTag tag, Function setState) async {
+    final localizations = AppLocalizations.of(context)!;
+    
+    // Buscar todos los síntomas que usan esta etiqueta
+    Map<String, List<DateTime>> usedDates = {};
+    _symptoms.forEach((dateKey, symptoms) {
+      final datesWithTag = symptoms
+          .where((s) => s.tag == tag.name)
+          .map((s) => s.date)  // Usar la fecha del síntoma directamente
+          .toList();
+      if (datesWithTag.isNotEmpty) {
+        usedDates[dateKey] = datesWithTag;
+      }
+    });
+
+    if (usedDates.isEmpty) {
+      // Si la etiqueta no está en uso, borrarla directamente
+      this.setState(() {
+        _tags.remove(tag);
+      });
+      _saveTags();
+      setState(() {});
+    } else {
+      // Si la etiqueta está en uso, mostrar diálogo de advertencia
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(localizations.cannotDeleteTag),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(localizations.tagInUseMessage),
+                const SizedBox(height: 8),
+                Text(localizations.datesWithTag),
+                const SizedBox(height: 4),
+                ...usedDates.entries.map((entry) {
+                  final date = entry.value.first;  // Tomamos la primera fecha de la lista
+                  return Text(
+                    '• ${DateFormat('d/M/y').format(date)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  );
+                }),
+                const SizedBox(height: 8),
+                Text(localizations.changeTagsBeforeDelete),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations.ok),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 }
 
