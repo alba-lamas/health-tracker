@@ -664,7 +664,7 @@ class _HomePageState extends State<HomePage> {
                     // Botones de selección de momento del día
                     Column(
                       children: [
-                        // Primera fila: Mañana y Tarde
+                        // First row: Morning and Afternoon
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
@@ -724,6 +724,13 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Second row: Night and All day
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -752,37 +759,35 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Segunda fila: Todo el día
-                        ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.schedule,
-                                size: 18,
-                                color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                localizations.allDay,
-                                style: TextStyle(
-                                  color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[600],
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 18,
+                                        color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(localizations.allDay),
+                                    ],
+                                  ),
+                                  selected: selectedTime == 'allday',
+                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
+                                  onSelected: (bool selected) {
+                                    setDialogState(() {
+                                      selectedTime = 'allday';
+                                    });
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
-                          selected: selectedTime == 'allday',
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          backgroundColor: Colors.transparent,
-                          showCheckmark: false,
-                          onSelected: (bool selected) {
-                            setDialogState(() {
-                              selectedTime = 'allday';
-                            });
-                          },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -957,7 +962,7 @@ class _HomePageState extends State<HomePage> {
                     // Botones de selección de momento del día
                     Column(
                       children: [
-                        // Primera fila: Mañana y Tarde
+                        // First row: Morning and Afternoon
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
@@ -1030,34 +1035,77 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        // Segunda fila: Todo el día
-                        ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.schedule,
-                                size: 18,
-                                color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                localizations.allDay,
-                                style: TextStyle(
-                                  color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[600],
+                        // Second row: Night and All day
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.nightlight,
+                                        size: 18,
+                                        color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[400],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        localizations.night,
+                                        style: TextStyle(
+                                          color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  selected: selectedTime == 'night',
+                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
+                                  onSelected: (bool selected) {
+                                    setEditDialogState(() {
+                                      selectedTime = selected ? 'night' : 'allday';
+                                    });
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
-                          selected: selectedTime == 'allday',
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          backgroundColor: Colors.transparent,
-                          showCheckmark: false,
-                          onSelected: (bool selected) {
-                            setEditDialogState(() {
-                              selectedTime = 'allday';
-                            });
-                          },
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 18,
+                                        color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        localizations.allDay,
+                                        style: TextStyle(
+                                          color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  selected: selectedTime == 'allday',
+                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  backgroundColor: Colors.transparent,
+                                  showCheckmark: false,
+                                  onSelected: (bool selected) {
+                                    setEditDialogState(() {
+                                      selectedTime = 'allday';
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

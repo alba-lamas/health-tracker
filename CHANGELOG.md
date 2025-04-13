@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.0+4] - 2024-05-13
+
+### Changed
+- Reorganized time selection buttons in two rows for better mobile display
+
+### Fixed
+- Improved time selection button text visibility on mobile devices
+
 ## [1.0.0+3] - 2024-05-12
 
 ### Added
