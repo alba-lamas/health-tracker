@@ -572,28 +572,42 @@ class _HomePageState extends State<HomePage> {
                             final symptom = daySymptoms[index];
                             return Card(
                               child: ListTile(
-                                leading: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: Color(int.parse(symptom.color)),
-                                    shape: BoxShape.circle,
-                                  ),
+                                leading: CircleAvatar(
+                                  backgroundColor: Color(int.parse(symptom.color)),
+                                  radius: 12,
                                 ),
                                 title: Text(symptom.description),
-                                subtitle: Text(symptom.tag),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(symptom.tag),
+                                    Row(
+                                      children: [
+                                        _buildTimeIcon(symptom.timeOfDay),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          symptom.intensity == 1 ? Icons.arrow_downward :
+                                          symptom.intensity == 2 ? Icons.remove :
+                                          Icons.arrow_upward,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _buildTimeIcon(symptom.timeOfDay),
-                                    const SizedBox(width: 4),
-                                    _buildIntensityIcon(symptom.intensity),
                                     IconButton(
                                       icon: const Icon(Icons.edit),
                                       onPressed: () {
                                         Navigator.of(context).pop();
                                         _showNewSymptomDialog(dia, symptom, null, null);
                                       },
+                                      padding: const EdgeInsets.all(0),
+                                      constraints: const BoxConstraints(),
+                                      visualDensity: VisualDensity.compact,
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete),
@@ -608,6 +622,9 @@ class _HomePageState extends State<HomePage> {
                                         Navigator.of(context).pop();
                                         _showSymptomsDialog(dia);
                                       },
+                                      padding: const EdgeInsets.all(0),
+                                      constraints: const BoxConstraints(),
+                                      visualDensity: VisualDensity.compact,
                                     ),
                                   ],
                                 ),
