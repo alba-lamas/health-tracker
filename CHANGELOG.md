@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0+6] - 2025-04-26
+
+### Added
+- Support for medications alongside symptoms
+- Visual filters in the calendar to show/hide symptoms and medications
+- Ability to select multiple times for symptoms and medications
+- Visual differentiation between symptoms and medications in the calendar
+- Filters in the statistics chart to show/hide symptoms and medications
+
+### Changed
+- Improved the design of the symptom/medication dialog
+- Reorganized the statistics view to display symptoms and medications separately
+- Optimized the display of markers in the calendar
+
+### Fixed
+- Fixed issues with date display in different languages
+- Improved state management in dialogs
+- Fixed the bug when editing symptoms
 
 ## [1.0.0+5] - 2024-05-13
 

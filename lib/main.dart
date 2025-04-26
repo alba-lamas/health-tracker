@@ -658,12 +658,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showNewSymptomDialog(DateTime dia, [dynamic itemToEdit, String? savedDescription, String? savedTime, bool? initialMedication]) {
+  void _showNewSymptomDialog(
+    DateTime dia, 
+    dynamic itemToEdit, 
+    String? currentDescription,
+    String? currentTime,
+    [bool isNewMedication = false]  // Renombrado para evitar conflicto
+  ) {
     final localizations = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: itemToEdit?.description ?? savedDescription ?? '');
+    final controller = TextEditingController(text: itemToEdit?.description ?? currentDescription ?? '');
     String? selectedTag = itemToEdit?.tag;
-    String selectedTime = itemToEdit?.timeOfDay ?? savedTime ?? '';
-    bool isMedication = itemToEdit != null ? itemToEdit is Medication : initialMedication ?? false;
+    Set<String> selectedTimes = (currentTime?.isEmpty ?? true)
+        ? {'allday'} 
+        : currentTime == 'allday' 
+          ? {'allday'} 
+          : {currentTime!};
+    bool isMedication = itemToEdit != null ? itemToEdit is Medication : isNewMedication;  // Usar el parámetro renombrado
     String selectedDose = itemToEdit is Medication ? itemToEdit.dose : '';
     int selectedIntensity = itemToEdit is Symptom ? itemToEdit.intensity : 2;
 
@@ -712,138 +722,74 @@ class _HomePageState extends State<HomePage> {
                         labelText: isMedication 
                           ? localizations.describeMedication 
                           : localizations.describeSymptom,
-                        border: const OutlineInputBorder(),
                       ),
-                      maxLines: 3,
                     ),
                     const SizedBox(height: 16),
-                    // Botones de selección de momento del día
-                    Column(
+                    Wrap(
+                      spacing: 8,
                       children: [
-                        // First row: Morning and Afternoon
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.wb_sunny_outlined,
-                                        size: 18,
-                                        color: selectedTime == 'morning' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(localizations.morning),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'morning',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setDialogState(() {
-                                      selectedTime = selected ? 'morning' : '';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.wb_twilight,
-                                        size: 18,
-                                        color: selectedTime == 'afternoon' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(localizations.afternoon),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'afternoon',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setDialogState(() {
-                                      selectedTime = selected ? 'afternoon' : '';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
+                        FilterChip(
+                          label: Text(localizations.morning),
+                          selected: selectedTimes.contains('morning'),
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedTimes.remove('allday');
+                                selectedTimes.add('morning');
+                              } else if (selectedTimes.length > 1) {
+                                selectedTimes.remove('morning');
+                              }
+                              if (selectedTimes.isEmpty) {
+                                selectedTimes.add('allday');
+                              }
+                            });
+                          },
                         ),
-                        const SizedBox(height: 8),
-                        // Second row: Night and All day
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.nightlight,
-                                        size: 18,
-                                        color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(localizations.night),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'night',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setDialogState(() {
-                                      selectedTime = selected ? 'night' : '';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.schedule,
-                                        size: 18,
-                                        color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(localizations.allDay),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'allday',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setDialogState(() {
-                                      selectedTime = 'allday';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
+                        FilterChip(
+                          label: Text(localizations.afternoon),
+                          selected: selectedTimes.contains('afternoon'),
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedTimes.remove('allday');
+                                selectedTimes.add('afternoon');
+                              } else if (selectedTimes.length > 1) {
+                                selectedTimes.remove('afternoon');
+                              }
+                              if (selectedTimes.isEmpty) {
+                                selectedTimes.add('allday');
+                              }
+                            });
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations.night),
+                          selected: selectedTimes.contains('night'),
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedTimes.remove('allday');
+                                selectedTimes.add('night');
+                              } else if (selectedTimes.length > 1) {
+                                selectedTimes.remove('night');
+                              }
+                              if (selectedTimes.isEmpty) {
+                                selectedTimes.add('allday');
+                              }
+                            });
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations.allDay),
+                          selected: selectedTimes.contains('allday'),
+                          onSelected: (bool selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedTimes.clear();
+                                selectedTimes.add('allday');
+                              }
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -862,7 +808,7 @@ class _HomePageState extends State<HomePage> {
                               null, 
                               dia, 
                               controller.text, 
-                              selectedTime,
+                              selectedTimes.first,
                               itemToEdit
                             );
                           },
@@ -872,7 +818,7 @@ class _HomePageState extends State<HomePage> {
                           tooltip: localizations.manageTags,
                           onPressed: () {
                             Navigator.pop(context);
-                            _showTagManagementDialog(dia, controller.text, selectedTime);
+                            _showTagManagementDialog(dia, controller.text, selectedTimes.first);
                           },
                         ),
                       ],
@@ -972,9 +918,10 @@ class _HomePageState extends State<HomePage> {
                 ),
                 ElevatedButton(
                   onPressed: (selectedTag != null && 
-                              selectedTime.isNotEmpty &&
+                              selectedTimes.isNotEmpty &&
                               (!isMedication || selectedIntensity > 0))
                     ? () {
+                        final timeOfDay = selectedTimes.length > 1 ? 'allday' : selectedTimes.first;
                         final key = _dateToKey(dia);
                         if (itemToEdit != null) {
                           if (isMedication) {
@@ -990,7 +937,7 @@ class _HomePageState extends State<HomePage> {
                                   tag: selectedTag!,
                                   color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
                                   date: dia,
-                                  timeOfDay: selectedTime,
+                                  timeOfDay: timeOfDay,
                                   dose: selectedDose,
                                 );
                               });
@@ -1008,7 +955,7 @@ class _HomePageState extends State<HomePage> {
                                   tag: selectedTag!,
                                   color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
                                   date: dia,
-                                  timeOfDay: selectedTime,
+                                  timeOfDay: timeOfDay,
                                   intensity: selectedIntensity,
                                 );
                               });
@@ -1025,7 +972,7 @@ class _HomePageState extends State<HomePage> {
                               tag: selectedTag!,
                               color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
                               date: dia,
-                              timeOfDay: selectedTime,
+                              timeOfDay: timeOfDay,
                               dose: selectedDose,
                             ));
                           } else {
@@ -1038,7 +985,7 @@ class _HomePageState extends State<HomePage> {
                               tag: selectedTag!,
                               color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
                               date: dia,
-                              timeOfDay: selectedTime,
+                              timeOfDay: timeOfDay,
                               intensity: selectedIntensity,
                             ));
                           }
