@@ -271,7 +271,7 @@ class _HomePageState extends State<HomePage> {
                         title: Text(localizations.newTag),
                         onTap: () {
                           Navigator.pop(context);
-                          _createEditTag(context, null, null, null);
+                          _createEditTag(context, null, null, null, null);
                         },
                       );
                     }
@@ -290,7 +290,7 @@ class _HomePageState extends State<HomePage> {
                             icon: const Icon(Icons.edit),
                             onPressed: () {
                               Navigator.pop(context);
-                              _createEditTag(context, tag, null, null);
+                              _createEditTag(context, tag, null, null, null);
                             },
                           ),
                           IconButton(
@@ -323,7 +323,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _createEditTag(BuildContext context, [SymptomTag? existingTag, DateTime? day, String? currentDescription, String? currentTime]) async {
+  Future<void> _createEditTag(
+    BuildContext context, 
+    [SymptomTag? existingTag, 
+    DateTime? day, 
+    String? currentDescription, 
+    String? currentTime,
+    Symptom? symptomToEdit  // Añadir el parámetro
+  ]) async {
     final localizations = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: existingTag?.name ?? '');
     Color selectedColor = Color(existingTag?.color ?? Colors.blue.value);
@@ -389,7 +396,12 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     Navigator.of(dialogContext).pop();
                     if (day != null) {
-                      _showNewSymptomDialog(day, null, currentDescription, currentTime);
+                      _showNewSymptomDialog(
+                        day, 
+                        symptomToEdit,  // Pasar el síntoma que se está editando
+                        currentDescription, 
+                        currentTime
+                      );
                     }
                   },
                   child: Text(localizations.cancel),
@@ -430,7 +442,12 @@ class _HomePageState extends State<HomePage> {
                       _saveTags();
                       Navigator.of(dialogContext).pop();
                       if (day != null) {
-                        _showNewSymptomDialog(day, null, currentDescription, currentTime);
+                        _showNewSymptomDialog(
+                          day, 
+                          symptomToEdit,  // Pasar el síntoma que se está editando
+                          currentDescription, 
+                          currentTime
+                        );
                       }
                     }
                   },
@@ -818,7 +835,14 @@ class _HomePageState extends State<HomePage> {
                           tooltip: localizations.newTag,
                           onPressed: () {
                             Navigator.pop(context);
-                            _createEditTag(context, null, dia, controller.text, selectedTime);
+                            _createEditTag(
+                              context, 
+                              null, 
+                              dia, 
+                              controller.text, 
+                              selectedTime,
+                              symptomToEdit
+                            );
                           },
                         ),
                         IconButton(
@@ -919,301 +943,37 @@ class _HomePageState extends State<HomePage> {
                         }
 
                         setState(() {
-                          _symptoms[key]!.add(Symptom(
-                            id: _uuid.v4(),
-                            description: controller.text,
-                            tag: selectedTag!,
-                            color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
-                            date: dia,
-                            timeOfDay: selectedTime,
-                            intensity: selectedIntensity,
-                          ));
+                          if (symptomToEdit != null) {
+                            // Si estamos editando, encontrar y reemplazar el síntoma existente
+                            final index = _symptoms[key]!.indexWhere((s) => s.id == symptomToEdit.id);
+                            if (index != -1) {
+                              _symptoms[key]![index] = Symptom(
+                                id: symptomToEdit.id, // Mantener el ID original
+                                description: controller.text,
+                                tag: selectedTag!,
+                                color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                                date: dia,
+                                timeOfDay: selectedTime,
+                                intensity: selectedIntensity,
+                              );
+                            }
+                          } else {
+                            // Si es nuevo, añadir el síntoma
+                            _symptoms[key]!.add(Symptom(
+                              id: _uuid.v4(),
+                              description: controller.text,
+                              tag: selectedTag!,
+                              color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                              date: dia,
+                              timeOfDay: selectedTime,
+                              intensity: selectedIntensity,
+                            ));
+                          }
                         });
 
                         _saveSymptoms();
                         Navigator.of(context).pop();
                         _showSymptomsDialog(dia);
-                      }
-                    : null,
-                  child: Text(localizations.save),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _editSymptom(Symptom sintoma, DateTime dia, Function setDialogState) {
-    final localizations = AppLocalizations.of(context)!;
-    final controlador = TextEditingController(text: sintoma.description);
-    String? selectedTag = sintoma.tag;
-    String selectedTime = sintoma.timeOfDay;  // Inicializar con el horario actual
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setEditDialogState) {
-            return AlertDialog(
-              title: Text(localizations.editSymptomTitle),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: controlador,
-                      decoration: InputDecoration(
-                        labelText: localizations.editSymptomDescription,
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.all(16),
-                      ),
-                      maxLines: 3,
-                      textCapitalization: TextCapitalization.sentences,
-                      keyboardType: TextInputType.multiline,
-                    ),
-                    const SizedBox(height: 16),
-                    // Botones de selección de momento del día
-                    Column(
-                      children: [
-                        // First row: Morning and Afternoon
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.wb_sunny_outlined,
-                                        size: 18,
-                                        color: selectedTime == 'morning' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        localizations.morning,
-                                        style: TextStyle(
-                                          color: selectedTime == 'morning' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'morning',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setEditDialogState(() {
-                                      selectedTime = selected ? 'morning' : 'allday';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.wb_twilight,
-                                        size: 18,
-                                        color: selectedTime == 'afternoon' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        localizations.afternoon,
-                                        style: TextStyle(
-                                          color: selectedTime == 'afternoon' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'afternoon',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setEditDialogState(() {
-                                      selectedTime = selected ? 'afternoon' : 'allday';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Second row: Night and All day
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.nightlight,
-                                        size: 18,
-                                        color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        localizations.night,
-                                        style: TextStyle(
-                                          color: selectedTime == 'night' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'night',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setEditDialogState(() {
-                                      selectedTime = selected ? 'night' : 'allday';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.schedule,
-                                        size: 18,
-                                        color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[400],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        localizations.allDay,
-                                        style: TextStyle(
-                                          color: selectedTime == 'allday' ? Colors.grey[800] : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  selected: selectedTime == 'allday',
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  backgroundColor: Colors.transparent,
-                                  showCheckmark: false,
-                                  onSelected: (bool selected) {
-                                    setEditDialogState(() {
-                                      selectedTime = 'allday';
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(localizations.selectTag),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          tooltip: localizations.newTag,
-                          onPressed: () {
-                            _createEditTag(context).then((_) {
-                              setEditDialogState(() {});
-                            });
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.settings),
-                          tooltip: localizations.manageTags,
-                          onPressed: () {
-                            _showTagManagementDialog().then((_) {
-                              setEditDialogState(() {});
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_tags.isEmpty)
-                      Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          localizations.noTags,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _tags.map((tag) => FilterChip(
-                        selected: tag.name == selectedTag,
-                        label: Text(tag.name),
-                        avatar: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Color(tag.color),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        onSelected: (bool selected) {
-                          setEditDialogState(() {
-                            selectedTag = selected ? tag.name : null;
-                          });
-                        },
-                      )).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(localizations.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: (controlador.text.isNotEmpty && 
-                              selectedTag != null && 
-                              selectedTime.isNotEmpty)  // Only validate description, tag and time
-                    ? () {
-                        final tagColor = _tags.firstWhere(
-                          (tag) => tag.name == selectedTag
-                        ).color;
-                        
-                        setState(() {
-                          final key = _dateToKey(dia);
-                          final index = _symptoms[key]!.indexWhere((s) => s.id == sintoma.id);
-                          _symptoms[key]![index] = Symptom(
-                            id: sintoma.id,
-                            description: controlador.text,
-                            tag: selectedTag!,
-                            color: tagColor.toString(),
-                            date: sintoma.date,
-                            timeOfDay: selectedTime,
-                            intensity: selectedIntensity,
-                          );
-                        });
-                        
-                        _saveSymptoms();
-                        Navigator.of(context).pop();
-                        setDialogState(() {});
                       }
                     : null,
                   child: Text(localizations.save),
