@@ -909,10 +909,9 @@ class _HomePageState extends State<HomePage> {
                   child: Text(localizations.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: (controller.text.isNotEmpty && 
-                              selectedTag != null && 
+                  onPressed: (selectedTag != null && 
                               selectedTime.isNotEmpty &&
-                              selectedIntensity > 0)
+                              selectedIntensity > 0)  // Quitar la validación de controller.text
                     ? () {
                         final key = _dateToKey(dia);
                         if (!_symptoms.containsKey(key)) {
