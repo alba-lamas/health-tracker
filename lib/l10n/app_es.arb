@@ -96,5 +96,18 @@
     "intensityMild": "Leve",
     "intensityModerate": "Moderada",
     "intensityStrong": "Fuerte",
-    "night": "Noche"
+    "night": "Noche",
+    "newItem": "Nuevo",
+    "editItem": "Editar",
+    "symptom": "Síntomas",
+    "medication": "Medicación",
+    "dose": "Dosis",
+    "describeMedication": "Describe la medicación",
+    "medicationsOf": "Medicaciones del {date}",
+    "@medicationsOf": {
+        "placeholders": {
+            "date": { "type": "String" }
+        }
+    },
+    "minimumSelectionRequired": "Una de las dos opciones tiene que estar seleccionada"
 } 

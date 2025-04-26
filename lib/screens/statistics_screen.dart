@@ -3,12 +3,15 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/symptom.dart';
 import '../models/tag.dart';
 import '../models/user.dart';
+import '../models/medication.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:io';
+import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final Map<String, List<Symptom>> symptoms;
+  final Map<String, List<Medication>> medications;
   final List<SymptomTag> tags;
   final String userName;
   final User user;
@@ -17,6 +20,7 @@ class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({
     super.key,
     required this.symptoms,
+    required this.medications,
     required this.tags,
     required this.userName,
     required this.user,
@@ -31,6 +35,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   String _selectedPeriod = 'month';  // Valores: 'week', 'month', 'year', 'custom'
   DateTime? _customStartDate;
   DateTime? _customEndDate;
+  Set<String> _visibleDataTypes = {'symptoms', 'medications'};  // Nuevo estado
 
   Map<String, int> _calculateTagFrequency() {
     final Map<String, int> frequency = {};
@@ -330,6 +335,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                 ),
               ),
+              const SizedBox(height: 8),
+              _buildChartLegend(),
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
@@ -344,41 +351,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   style: const TextStyle(fontStyle: FontStyle.italic),
                 )
               else
-                ...groupSymptomsByDate(filteredSymptoms).entries.map((entry) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        '${entry.key.day}/${entry.key.month}/${entry.key.year}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    ...entry.value.map((symptom) => ListTile(
-                      leading: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(symptom.color)),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      title: Text(symptom.description),
-                      subtitle: Text(symptom.tag),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildTimeIcon(symptom.timeOfDay),
-                          const SizedBox(width: 4),
-                          _buildIntensityIcon(symptom.intensity),
-                        ],
-                      ),
-                    )),
-                  ],
-                )),
+                _buildStatisticsContent(
+                  filteredSymptoms,
+                  _getFilteredMedications(),
+                ),
             ],
           ),
         ),
@@ -434,46 +410,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   // Añadir este método para construir el icono de intensidad
   Widget _buildIntensityIcon(int intensity) {
-    IconData icon;
-    Color color;
-    switch (intensity) {
-      case 1:
-        icon = Icons.arrow_downward;
-        color = Colors.green;
-        break;
-      case 3:
-        icon = Icons.arrow_upward;
-        color = Colors.red;
-        break;
-      default:
-        icon = Icons.remove;
-        color = Colors.orange;
-    }
-    return Icon(icon, size: 18, color: color);
+    return Icon(
+      intensity == 1 ? Icons.arrow_downward :
+      intensity == 3 ? Icons.arrow_upward :
+      Icons.remove,
+      size: 18,
+      color: intensity == 1 ? Colors.green :
+             intensity == 3 ? Colors.red :
+             Colors.orange,
+    );
   }
 
   // Añadir este método para construir el icono de tiempo
   Widget _buildTimeIcon(String timeOfDay) {
-    IconData icon;
-    Color color;
-    switch (timeOfDay) {
-      case 'morning':
-        icon = Icons.wb_sunny_outlined;
-        color = Colors.yellow;
-        break;
-      case 'afternoon':
-        icon = Icons.wb_twilight;
-        color = Colors.orange;
-        break;
-      case 'night':
-        icon = Icons.nightlight;
-        color = Colors.blue;
-        break;
-      default:
-        icon = Icons.schedule;
-        color = Colors.blue;
-    }
-    return Icon(icon, size: 18, color: color);
+    return Icon(
+      timeOfDay == 'morning' ? Icons.wb_sunny_outlined :
+      timeOfDay == 'afternoon' ? Icons.wb_twilight :
+      timeOfDay == 'night' ? Icons.nightlight :
+      Icons.schedule,
+      size: 18,
+      color: Colors.grey[600],
+    );
   }
 
   // Función helper para agrupar síntomas por fecha
@@ -496,88 +453,113 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  // Primero, creamos una estructura para almacenar las frecuencias por intensidad
-  Map<String, Map<int, int>> _calculateTagFrequencyByIntensity() {
-    final Map<String, Map<int, int>> frequency = {};
+  // Modificar para incluir tanto síntomas como medicaciones
+  Map<String, Map<String, Map<int, int>>> _calculateTagFrequencyByType() {
+    final Map<String, Map<String, Map<int, int>>> frequency = {};
     
     // Inicializar el mapa para todas las etiquetas
     for (var tag in widget.tags) {
       frequency[tag.name] = {
-        1: 0,  // leve
-        2: 0,  // moderado
-        3: 0,  // fuerte
+        'symptoms': {1: 0, 2: 0, 3: 0},  // Intensidades para síntomas
+        'medications': {1: 0},  // Solo conteo para medicaciones
       };
     }
 
-    // Contar síntomas por etiqueta e intensidad
+    // Contar síntomas
     for (var symptom in _getFilteredSymptoms()) {
-      if (frequency.containsKey(symptom.tag)) {  // Verificar que la etiqueta existe
-        final intensityMap = frequency[symptom.tag]!;
-        final intensity = symptom.intensity.clamp(1, 3);  // Asegurar valor válido
+      if (frequency.containsKey(symptom.tag)) {
+        final intensityMap = frequency[symptom.tag]!['symptoms']!;
+        final intensity = symptom.intensity.clamp(1, 3);
         intensityMap[intensity] = (intensityMap[intensity] ?? 0) + 1;
+      }
+    }
+
+    // Contar medicaciones
+    for (var medication in _getFilteredMedications()) {
+      if (frequency.containsKey(medication.tag)) {
+        final medicationMap = frequency[medication.tag]!['medications']!;
+        medicationMap[1] = (medicationMap[1] ?? 0) + 1;
       }
     }
 
     return frequency;
   }
 
-  // Luego, modificamos la generación de las barras
   BarChartGroupData _generateBarGroup(
     int x,
     String tagName,
     Color baseColor,
-    Map<int, int> intensityCount,
+    Map<String, Map<int, int>> typeCount,
   ) {
-    final leve = intensityCount[1] ?? 0;
-    final moderado = intensityCount[2] ?? 0;
-    final fuerte = intensityCount[3] ?? 0;
-    final total = leve + moderado + fuerte;
-
-    if (total == 0) return BarChartGroupData(x: x, barRods: []);
-
-    // Convertir el color base a HSL para ajustar la luminosidad
+    final symptomTotal = typeCount['symptoms']!.values.fold(0, (a, b) => a + b);
+    final medicationTotal = typeCount['medications']!.values.fold(0, (a, b) => a + b);
+    final barWidth = 12.0;
     final hslColor = HSLColor.fromColor(baseColor);
 
     return BarChartGroupData(
       x: x,
+      groupVertically: false,
       barRods: [
+        // Barra de síntomas (sólida con gradiente de intensidad)
         BarChartRodData(
-          toY: total.toDouble(),
-          width: 20,
+          toY: symptomTotal.toDouble(),
+          width: barWidth,
           borderRadius: BorderRadius.zero,
           rodStackItems: [
             // Leve (más claro)
             BarChartRodStackItem(
               0,
-              leve.toDouble(),
+              typeCount['symptoms']![1]!.toDouble(),
               hslColor.withLightness((hslColor.lightness + 0.3).clamp(0.0, 1.0)).toColor(),
             ),
             // Moderado (normal)
             BarChartRodStackItem(
-              leve.toDouble(),
-              (leve + moderado).toDouble(),
+              typeCount['symptoms']![1]!.toDouble(),
+              (typeCount['symptoms']![1]! + typeCount['symptoms']![2]!).toDouble(),
               baseColor,
             ),
             // Fuerte (más oscuro)
             BarChartRodStackItem(
-              (leve + moderado).toDouble(),
-              total.toDouble(),
+              (typeCount['symptoms']![1]! + typeCount['symptoms']![2]!).toDouble(),
+              symptomTotal.toDouble(),
               hslColor.withLightness((hslColor.lightness - 0.2).clamp(0.0, 1.0)).toColor(),
             ),
           ],
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: symptomTotal.toDouble(),
+            color: Colors.grey[200],
+          ),
+        ),
+        // Barra de medicaciones (con borde y relleno semitransparente)
+        BarChartRodData(
+          toY: medicationTotal.toDouble(),
+          width: barWidth,
+          color: baseColor.withOpacity(0.3),  // Color semitransparente para el relleno
+          borderRadius: BorderRadius.zero,
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: medicationTotal.toDouble(),
+            color: Colors.grey[200],
+          ),
+          borderSide: BorderSide(  // Añadir borde
+            width: 2,
+            color: baseColor,
+          ),
         ),
       ],
+      barsSpace: 4,
     );
   }
 
-  // Y actualizamos la parte donde creamos el gráfico
   List<BarChartGroupData> _generateBarGroups() {
-    final frequencyByIntensity = _calculateTagFrequencyByIntensity();
+    final frequencyByType = _calculateTagFrequencyByType();
     final activeTags = widget.tags
         .where((tag) {
-          final intensities = frequencyByIntensity[tag.name];
-          return intensities != null && 
-                 intensities.values.any((count) => count > 0);
+          final counts = frequencyByType[tag.name];
+          return counts != null && 
+                 (_visibleDataTypes.contains('symptoms') && counts['symptoms']!.values.any((count) => count > 0) ||
+                  _visibleDataTypes.contains('medications') && counts['medications']!.values.any((count) => count > 0));
         })
         .toList();
 
@@ -585,14 +567,272 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       activeTags.length,
       (index) {
         final tag = activeTags[index];
-        final intensityMap = frequencyByIntensity[tag.name] ?? {1: 0, 2: 0, 3: 0};
+        final typeCount = frequencyByType[tag.name]!;
+        
+        // Si un tipo no está visible, poner sus valores en 0
+        if (!_visibleDataTypes.contains('symptoms')) {
+          typeCount['symptoms'] = {1: 0, 2: 0, 3: 0};
+        }
+        if (!_visibleDataTypes.contains('medications')) {
+          typeCount['medications'] = {1: 0};
+        }
+        
         return _generateBarGroup(
           index,
           tag.name,
           Color(tag.color),
-          intensityMap,
+          typeCount,
         );
       },
+    );
+  }
+
+  Widget _buildStatisticsContent(List<Symptom> symptoms, List<Medication> medications) {
+    final localizations = AppLocalizations.of(context)!;
+    final Map<String, List<List<dynamic>>> itemsByTag = {};
+    
+    // Agrupar síntomas y medicaciones por tag
+    for (var symptom in symptoms) {
+      if (!itemsByTag.containsKey(symptom.tag)) {
+        itemsByTag[symptom.tag] = [[], []];
+      }
+      (itemsByTag[symptom.tag]![0] as List).add(symptom);
+    }
+    
+    for (var medication in medications) {
+      if (!itemsByTag.containsKey(medication.tag)) {
+        itemsByTag[medication.tag] = [[], []];
+      }
+      (itemsByTag[medication.tag]![1] as List).add(medication);
+    }
+
+    return Column(
+      children: [
+        ...itemsByTag.entries.map((entry) {
+          final symptoms = List<Symptom>.from(entry.value[0]);
+          final medications = List<Medication>.from(entry.value[1]);
+          final tagColor = symptoms.isNotEmpty 
+              ? Color(int.parse(symptoms.first.color))
+              : Color(int.parse(medications.first.color));
+
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: tagColor,
+                        radius: 8,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (symptoms.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      localizations.symptom,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...symptoms.map((symptom) => _buildSymptomItem(symptom)),
+                  ],
+                  if (medications.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      localizations.medication,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...medications.map((medication) => _buildMedicationItem(medication)),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildSymptomItem(Symptom symptom) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          _buildTimeIcon(symptom.timeOfDay),
+          const SizedBox(width: 4),
+          _buildIntensityIcon(symptom.intensity),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(symptom.description),
+          ),
+          Text(DateFormat('d/M/y').format(symptom.date)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicationItem(Medication medication) {
+    final localizations = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          _buildTimeIcon(medication.timeOfDay),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(medication.description),
+                if (medication.dose.isNotEmpty)
+                  Text(
+                    '${localizations.dose}: ${medication.dose}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Text(DateFormat('d/M/y').format(medication.date)),
+        ],
+      ),
+    );
+  }
+
+  List<Medication> _getFilteredMedications() {
+    final now = DateTime.now();
+    final List<Medication> filtered = [];
+
+    widget.medications.forEach((dateStr, medications) {
+      try {
+        final dateParts = dateStr.split('-');
+        final year = int.parse(dateParts[0]);
+        final month = int.parse(dateParts[1]);
+        final day = int.parse(dateParts[2]);
+        final date = DateTime(year, month, day);
+        
+        bool includeMedications = false;
+
+        switch (_selectedPeriod) {
+          case 'week':
+            includeMedications = now.difference(date).inDays <= 7;
+            break;
+          case 'month':
+            includeMedications = date.year == now.year && date.month == now.month;
+            break;
+          case 'year':
+            includeMedications = date.year == now.year;
+            break;
+          case 'custom':
+            if (_customStartDate != null && _customEndDate != null) {
+              includeMedications = !date.isBefore(_customStartDate!) && 
+                              !date.isAfter(_customEndDate!);
+            }
+            break;
+        }
+
+        if (includeMedications) {
+          filtered.addAll(medications.map((m) => m.copyWith(date: date)));
+        }
+      } catch (e) {
+        debugPrint('Error parsing date: $dateStr');
+      }
+    });
+
+    // Ordenar por fecha más reciente primero
+    filtered.sort((a, b) => b.date.compareTo(a.date));
+    return filtered;
+  }
+
+  void _showMinimumSelectionWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.minimumSelectionRequired),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(8),
+      ),
+    );
+  }
+
+  Widget _buildChartLegend() {
+    final localizations = AppLocalizations.of(context)!;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        FilterChip(
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.sick, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                localizations.symptom,
+                style: TextStyle(
+                  color: _visibleDataTypes.contains('symptoms') ? null : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          selected: _visibleDataTypes.contains('symptoms'),
+          onSelected: (bool selected) {
+            if (!selected && _visibleDataTypes.length <= 1) {
+              _showMinimumSelectionWarning();
+              return;
+            }
+            setState(() {
+              if (selected) {
+                _visibleDataTypes.add('symptoms');
+              } else {
+                _visibleDataTypes.remove('symptoms');
+              }
+            });
+          },
+        ),
+        const SizedBox(width: 16),
+        FilterChip(
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.medication, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                localizations.medication,
+                style: TextStyle(
+                  color: _visibleDataTypes.contains('medications') ? null : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          selected: _visibleDataTypes.contains('medications'),
+          onSelected: (bool selected) {
+            if (!selected && _visibleDataTypes.length <= 1) {
+              _showMinimumSelectionWarning();
+              return;
+            }
+            setState(() {
+              if (selected) {
+                _visibleDataTypes.add('medications');
+              } else {
+                _visibleDataTypes.remove('medications');
+              }
+            });
+          },
+        ),
+      ],
     );
   }
 } 

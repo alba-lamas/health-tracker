@@ -96,5 +96,18 @@
     "intensityMild": "Lleu",
     "intensityModerate": "Moderada",
     "intensityStrong": "Forta",
-    "night": "Nit"
+    "night": "Nit",
+    "newItem": "Nou",
+    "editItem": "Editar",
+    "symptom": "Símptomes",
+    "medication": "Medicació",
+    "dose": "Dosi",
+    "describeMedication": "Descriu la medicació",
+    "medicationsOf": "Medicacions del {date}",
+    "@medicationsOf": {
+        "placeholders": {
+            "date": { "type": "String" }
+        }
+    },
+    "minimumSelectionRequired": "Una de les dues opcions ha d'estar seleccionada"
 } 

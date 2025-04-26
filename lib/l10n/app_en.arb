@@ -23,7 +23,7 @@
         }
     },
     "newSymptom": "New symptom",
-    "describeSymptom": "Describe the symptom",
+    "describeSymptom": "Describe symptom",
     "morning": "Morning",
     "afternoon": "Afternoon",
     "allDay": "All day",
@@ -141,5 +141,18 @@
     "intensityMild": "Mild",
     "intensityModerate": "Moderate",
     "intensityStrong": "Strong",
-    "night": "Night"
+    "night": "Night",
+    "symptom": "Symptoms",
+    "medication": "Medications",
+    "dose": "Dose",
+    "newItem": "New",
+    "editItem": "Edit",
+    "describeMedication": "Describe medication",
+    "medicationsOf": "Medications of {date}",
+    "@medicationsOf": {
+        "placeholders": {
+            "date": { "type": "String" }
+        }
+    },
+    "minimumSelectionRequired": "At least one option must be selected"
 } 

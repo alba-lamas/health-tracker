@@ -12,6 +12,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'screens/statistics_screen.dart';
 import 'package:intl/intl.dart';
+import 'models/medication.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,10 +135,13 @@ class _HomePageState extends State<HomePage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<String, List<Symptom>> _symptoms = {};
+  Map<String, List<Medication>> _medications = {};
   final _prefsInstance = SharedPreferences.getInstance();
   final _uuid = const Uuid();
   List<SymptomTag> _tags = [];
   int selectedIntensity = 2;
+  String selectedDose = '';
+  Set<String> _visibleMarkers = {'symptoms', 'medications'};  // Por defecto mostrar ambos
 
   String get _userSymptomsKey => 'symptoms_${widget.user.id}';  // Use unique key
   String get _userTagsKey => 'tags_${widget.user.id}';         // Use unique key
@@ -145,7 +149,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadSymptoms();
+    _loadData();
     _loadTags().then((_) {
       // If there are no saved tags, create default ones
       if (_tags.isEmpty) {
@@ -178,40 +182,54 @@ class _HomePageState extends State<HomePage> {
     return "${fecha.year}-${fecha.month}-${fecha.day}";
   }
 
-  Future<void> _loadSymptoms() async {
+  Future<void> _loadData() async {
     final prefs = await _prefsInstance;
-    final symptomsString = prefs.getString(_userSymptomsKey);  // Use unique key
-    if (symptomsString != null) {
-      try {
-        final Map<String, dynamic> decodedData = json.decode(symptomsString);
-        setState(() {
-          _symptoms = Map.fromEntries(
-            decodedData.entries.map(
-              (e) => MapEntry(
-                e.key,
-                (e.value as List)
-                    .map((item) => Symptom.fromJson(Map<String, dynamic>.from(item)))
-                    .toList(),
-              ),
-            ),
-          );
-        });
-      } catch (e) {
-        debugPrint('Error loading symptoms: $e');
-      }
+    
+    // Load symptoms
+    final symptomsJson = prefs.getString(_userSymptomsKey);
+    if (symptomsJson != null) {
+      final Map<String, dynamic> decoded = json.decode(symptomsJson);
+      _symptoms = decoded.map((key, value) => MapEntry(
+        key,
+        (value as List).map((item) => Symptom.fromJson(item)).toList(),
+      ));
+    }
+
+    // Load medications
+    final medicationsJson = prefs.getString('medications_${widget.user.id}');
+    if (medicationsJson != null) {
+      final Map<String, dynamic> decoded = json.decode(medicationsJson);
+      _medications = decoded.map((key, value) => MapEntry(
+        key,
+        (value as List).map((item) => Medication.fromJson(item)).toList(),
+      ));
+    }
+
+    // Load tags
+    final tagsJson = prefs.getString('tags_${widget.user.id}');
+    if (tagsJson != null) {
+      _tags = (json.decode(tagsJson) as List)
+          .map((item) => SymptomTag.fromJson(item))
+          .toList();
     }
   }
 
-  Future<void> _saveSymptoms() async {
+  Future<void> _saveData() async {
     final prefs = await _prefsInstance;
-    try {
-      final symptomsJson = _symptoms.map(
-        (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-      );
-      await prefs.setString(_userSymptomsKey, json.encode(symptomsJson));  // Use unique key
-    } catch (e) {
-      debugPrint('Error saving symptoms: $e');
-    }
+    
+    // Save symptoms
+    final symptomsJson = json.encode(_symptoms.map(
+      (key, value) => MapEntry(key, value.map((s) => s.toJson()).toList()),
+    ));
+    await prefs.setString(_userSymptomsKey, symptomsJson);
+
+    // Save medications
+    final medicationsJson = json.encode(_medications.map(
+      (key, value) => MapEntry(key, value.map((m) => m.toJson()).toList()),
+    ));
+    await prefs.setString('medications_${widget.user.id}', medicationsJson);
+
+    await prefs.setString('tags_${widget.user.id}', json.encode(_tags.map((t) => t.toJson()).toList()));
   }
 
   Future<void> _loadTags() async {
@@ -490,7 +508,7 @@ class _HomePageState extends State<HomePage> {
       _symptoms[key]!.add(nuevoSintoma);
     });
 
-    await _saveSymptoms();
+    await _saveData();
     
     // Volver a mostrar el dialog of symptoms updated
     if (mounted) {
@@ -499,22 +517,15 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Widget _buildTimeIcon(String timeOfDay) {
-    IconData icon;
-    switch (timeOfDay) {
-      case 'morning':
-        icon = Icons.wb_sunny_outlined;
-        break;
-      case 'afternoon':
-        icon = Icons.wb_twilight;
-        break;
-      case 'night':
-        icon = Icons.nightlight;  // o Icons.bedtime
-        break;
-      default:
-        icon = Icons.schedule;
-    }
-    return Icon(icon, size: 18, color: Colors.grey);
+  Widget _buildTimeIcon(String timeOfDay, {double size = 18, Color? color}) {
+    return Icon(
+      timeOfDay == 'morning' ? Icons.wb_sunny_outlined :
+      timeOfDay == 'afternoon' ? Icons.wb_twilight :
+      timeOfDay == 'night' ? Icons.nightlight :
+      Icons.schedule,
+      size: size,
+      color: color ?? Colors.grey[600],  // Usar el color proporcionado o gris como fallback
+    );
   }
 
   Widget _buildCalendarMarker(String timeOfDay) {
@@ -529,136 +540,117 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildIntensityIcon(int intensity) {
-    IconData icon;
-    Color color;
-    switch (intensity) {
-      case 1:
-        icon = Icons.arrow_downward;
-        color = Colors.green;
-        break;
-      case 3:
-        icon = Icons.arrow_upward;
-        color = Colors.red;
-        break;
-      default:
-        icon = Icons.remove;
-        color = Colors.orange;
-    }
-    return Icon(icon, size: 18, color: color);
+    return Icon(
+      intensity == 1 ? Icons.arrow_downward :
+      intensity == 3 ? Icons.arrow_upward :
+      Icons.remove,
+      size: 18,
+      color: intensity == 1 ? Colors.green :
+             intensity == 3 ? Colors.red :
+             Colors.orange,
+    );
   }
 
-  void _showSymptomsDialog(DateTime dia) {
-    final key = _dateToKey(dia);
-    List<Symptom> daySymptoms = _symptoms[key] ?? [];
+  void _showSymptomsDialog(DateTime day) {
     final localizations = AppLocalizations.of(context)!;
-    final date = "${dia.day}/${dia.month}/${dia.year}";
+    final key = _dateToKey(day);
+    final symptoms = _symptoms[key] ?? [];
+    final medications = _medications[key] ?? [];
+    bool showingMedications = false;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(localizations.symptomsOf(date)),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: MediaQuery.of(context).size.height * 0.7,
+            return Dialog(  // Cambiado de AlertDialog a Dialog para más control
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),  // Reducir márgenes
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.95,  // Usar 95% del ancho de pantalla
+                constraints: const BoxConstraints(maxWidth: 600),  // Máximo ancho en tablets
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: Text(localizations.newSymptom),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _showNewSymptomDialog(dia, null, null, null);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    if (daySymptoms.isEmpty)
-                      Text(
-                        localizations.noSymptomsRegistered,
-                        textAlign: TextAlign.center,
-                      )
-                    else
-                      Expanded(
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: daySymptoms.length,
-                          itemBuilder: (context, index) {
-                            final symptom = daySymptoms[index];
-                            return Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Color(int.parse(symptom.color)),
-                                  radius: 12,
-                                ),
-                                title: Text(symptom.description),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(symptom.tag),
-                                    Row(
-                                      children: [
-                                        _buildTimeIcon(symptom.timeOfDay),
-                                        const SizedBox(width: 8),
-                                        Icon(
-                                          symptom.intensity == 1 ? Icons.arrow_downward :
-                                          symptom.intensity == 2 ? Icons.remove :
-                                          Icons.arrow_upward,
-                                          size: 16,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        _showNewSymptomDialog(dia, symptom, null, null);
-                                      },
-                                      padding: const EdgeInsets.all(0),
-                                      constraints: const BoxConstraints(),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () {
-                                        setState(() {
-                                          _symptoms[key]!.remove(symptom);
-                                          if (_symptoms[key]!.isEmpty) {
-                                            _symptoms.remove(key);
-                                          }
-                                        });
-                                        _saveSymptoms();
-                                        Navigator.of(context).pop();
-                                        _showSymptomsDialog(dia);
-                                      },
-                                      padding: const EdgeInsets.all(0),
-                                      constraints: const BoxConstraints(),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                  ],
-                                ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('d MMMM yyyy', Localizations.localeOf(context).languageCode).format(day),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          SegmentedButton<bool>(
+                            segments: [
+                              ButtonSegment<bool>(
+                                value: false,
+                                label: Text(localizations.symptom),
+                                icon: const Icon(Icons.sick),
                               ),
-                            );
-                          },
+                              ButtonSegment<bool>(
+                                value: true,
+                                label: Text(localizations.medication),
+                                icon: const Icon(Icons.medication),
+                              ),
+                            ],
+                            selected: {showingMedications},
+                            onSelectionChanged: (Set<bool> newSelection) {
+                              setDialogState(() {
+                                showingMedications = newSelection.first;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Flexible(  // Hacer que el contenido sea scrollable si es muy largo
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  showingMedications 
+                                    ? localizations.medication
+                                    : localizations.symptom,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    _showNewSymptomDialog(day, null, '', '', showingMedications);
+                                  },
+                                ),
+                              ],
+                            ),
+                            if ((showingMedications ? medications : symptoms).isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(localizations.noSymptomsRegistered),
+                              )
+                            else
+                              ...(showingMedications ? medications : symptoms)
+                                  .map((item) => _buildItemCard(item, day)),
+                          ],
                         ),
                       ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(localizations.close),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(localizations.close),
-                ),
-              ],
             );
           },
         );
@@ -666,12 +658,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showNewSymptomDialog(DateTime dia, [Symptom? symptomToEdit, String? savedDescription, String? savedTime]) {
+  void _showNewSymptomDialog(DateTime dia, [dynamic itemToEdit, String? savedDescription, String? savedTime, bool? initialMedication]) {
     final localizations = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: symptomToEdit?.description ?? savedDescription ?? '');
-    String? selectedTag = symptomToEdit?.tag;
-    String selectedTime = symptomToEdit?.timeOfDay ?? savedTime ?? '';
-    int selectedIntensity = symptomToEdit?.intensity ?? 0;
+    final controller = TextEditingController(text: itemToEdit?.description ?? savedDescription ?? '');
+    String? selectedTag = itemToEdit?.tag;
+    String selectedTime = itemToEdit?.timeOfDay ?? savedTime ?? '';
+    bool isMedication = itemToEdit != null ? itemToEdit is Medication : initialMedication ?? false;
+    String selectedDose = itemToEdit is Medication ? itemToEdit.dose : '';
+    int selectedIntensity = itemToEdit is Symptom ? itemToEdit.intensity : 2;
 
     showDialog(
       context: context,
@@ -680,7 +674,33 @@ class _HomePageState extends State<HomePage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(symptomToEdit == null ? localizations.newSymptom : localizations.editSymptom),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(itemToEdit == null ? localizations.newItem : localizations.editItem),
+                  const SizedBox(height: 8),
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text(localizations.symptom),
+                        icon: const Icon(Icons.sick),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text(localizations.medication),
+                        icon: const Icon(Icons.medication),
+                      ),
+                    ],
+                    selected: {isMedication},
+                    onSelectionChanged: (Set<bool> newSelection) {
+                      setDialogState(() {
+                        isMedication = newSelection.first;
+                      });
+                    },
+                  ),
+                ],
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -689,7 +709,9 @@ class _HomePageState extends State<HomePage> {
                     TextField(
                       controller: controller,
                       decoration: InputDecoration(
-                        labelText: localizations.describeSymptom,
+                        labelText: isMedication 
+                          ? localizations.describeMedication 
+                          : localizations.describeSymptom,
                         border: const OutlineInputBorder(),
                       ),
                       maxLines: 3,
@@ -841,7 +863,7 @@ class _HomePageState extends State<HomePage> {
                               dia, 
                               controller.text, 
                               selectedTime,
-                              symptomToEdit
+                              itemToEdit
                             );
                           },
                         ),
@@ -877,50 +899,66 @@ class _HomePageState extends State<HomePage> {
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(localizations.intensity),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ChoiceChip(
-                          label: Text(localizations.intensityMild),
-                          selected: selectedIntensity == 1,
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          backgroundColor: Colors.transparent,
-                          onSelected: (bool selected) {
-                            setDialogState(() {
-                              selectedIntensity = selected ? 1 : 2;
-                            });
-                          },
+                    if (isMedication) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: localizations.dose,
+                          border: const OutlineInputBorder(),
                         ),
-                        ChoiceChip(
-                          label: Text(localizations.intensityModerate),
-                          selected: selectedIntensity == 2,
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          backgroundColor: Colors.transparent,
-                          onSelected: (bool selected) {
-                            setDialogState(() {
-                              selectedIntensity = 2;
-                            });
-                          },
-                        ),
-                        ChoiceChip(
-                          label: Text(localizations.intensityStrong),
-                          selected: selectedIntensity == 3,
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          backgroundColor: Colors.transparent,
-                          onSelected: (bool selected) {
-                            setDialogState(() {
-                              selectedIntensity = selected ? 3 : 2;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
+                        onChanged: (value) {
+                          selectedDose = value;
+                        },
+                        controller: TextEditingController(text: selectedDose),
+                      ),
+                    ] else ...[
+                      // Sección existente de intensidad
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(localizations.intensity),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ChoiceChip(
+                            label: Text(localizations.intensityMild),
+                            selected: selectedIntensity == 1,
+                            selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                            backgroundColor: Colors.transparent,
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                selectedIntensity = selected ? 1 : 2;
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: Text(localizations.intensityModerate),
+                            selected: selectedIntensity == 2,
+                            selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                            backgroundColor: Colors.transparent,
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                selectedIntensity = 2;
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: Text(localizations.intensityStrong),
+                            selected: selectedIntensity == 3,
+                            selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                            backgroundColor: Colors.transparent,
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                selectedIntensity = selected ? 3 : 2;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -935,30 +973,65 @@ class _HomePageState extends State<HomePage> {
                 ElevatedButton(
                   onPressed: (selectedTag != null && 
                               selectedTime.isNotEmpty &&
-                              selectedIntensity > 0)  // Quitar la validación de controller.text
+                              (!isMedication || selectedIntensity > 0))
                     ? () {
                         final key = _dateToKey(dia);
-                        if (!_symptoms.containsKey(key)) {
-                          _symptoms[key] = [];
-                        }
-
-                        setState(() {
-                          if (symptomToEdit != null) {
-                            // Si estamos editando, encontrar y reemplazar el síntoma existente
-                            final index = _symptoms[key]!.indexWhere((s) => s.id == symptomToEdit.id);
+                        if (itemToEdit != null) {
+                          if (isMedication) {
+                            if (!_medications.containsKey(key)) {
+                              _medications[key] = [];
+                            }
+                            final index = _medications[key]!.indexWhere((m) => m.id == itemToEdit.id);
                             if (index != -1) {
-                              _symptoms[key]![index] = Symptom(
-                                id: symptomToEdit.id, // Mantener el ID original
-                                description: controller.text,
-                                tag: selectedTag!,
-                                color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
-                                date: dia,
-                                timeOfDay: selectedTime,
-                                intensity: selectedIntensity,
-                              );
+                              setState(() {
+                                _medications[key]![index] = Medication(
+                                  id: itemToEdit.id,
+                                  description: controller.text,
+                                  tag: selectedTag!,
+                                  color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                                  date: dia,
+                                  timeOfDay: selectedTime,
+                                  dose: selectedDose,
+                                );
+                              });
                             }
                           } else {
-                            // Si es nuevo, añadir el síntoma
+                            if (!_symptoms.containsKey(key)) {
+                              _symptoms[key] = [];
+                            }
+                            final index = _symptoms[key]!.indexWhere((s) => s.id == itemToEdit.id);
+                            if (index != -1) {
+                              setState(() {
+                                _symptoms[key]![index] = Symptom(
+                                  id: itemToEdit.id,
+                                  description: controller.text,
+                                  tag: selectedTag!,
+                                  color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                                  date: dia,
+                                  timeOfDay: selectedTime,
+                                  intensity: selectedIntensity,
+                                );
+                              });
+                            }
+                          }
+                        } else {
+                          if (isMedication) {
+                            if (!_medications.containsKey(key)) {
+                              _medications[key] = [];
+                            }
+                            _medications[key]!.add(Medication(
+                              id: _uuid.v4(),
+                              description: controller.text,
+                              tag: selectedTag!,
+                              color: _tags.firstWhere((tag) => tag.name == selectedTag).color.toString(),
+                              date: dia,
+                              timeOfDay: selectedTime,
+                              dose: selectedDose,
+                            ));
+                          } else {
+                            if (!_symptoms.containsKey(key)) {
+                              _symptoms[key] = [];
+                            }
                             _symptoms[key]!.add(Symptom(
                               id: _uuid.v4(),
                               description: controller.text,
@@ -969,9 +1042,10 @@ class _HomePageState extends State<HomePage> {
                               intensity: selectedIntensity,
                             ));
                           }
-                        });
+                        }
 
-                        _saveSymptoms();
+                        _saveData();
+                        setState(() {});
                         Navigator.of(context).pop();
                         _showSymptomsDialog(dia);
                       }
@@ -1000,6 +1074,31 @@ class _HomePageState extends State<HomePage> {
         title: Text(widget.title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Añadir botón de filtro antes del botón de logout
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list),
+            onSelected: (value) {
+              setState(() {
+                if (_visibleMarkers.contains(value)) {
+                  _visibleMarkers.remove(value);  // Permitir desmarcar aunque no quede ninguna opción
+                } else {
+                  _visibleMarkers.add(value);
+                }
+              });
+            },
+            itemBuilder: (context) => [
+              CheckedPopupMenuItem(
+                value: 'symptoms',
+                checked: _visibleMarkers.contains('symptoms'),
+                child: Text(localizations.symptom),
+              ),
+              CheckedPopupMenuItem(
+                value: 'medications',
+                checked: _visibleMarkers.contains('medications'),
+                child: Text(localizations.medication),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: GestureDetector(
@@ -1099,18 +1198,46 @@ class _HomePageState extends State<HomePage> {
                   calendarBuilders: CalendarBuilders(
                     markerBuilder: (context, date, events) {
                       final key = _dateToKey(date);
-                      if (_symptoms.containsKey(key)) {
-                        return Wrap(
-                          spacing: 2,
-                          children: _symptoms[key]!.map((sintoma) {
-                            return CustomPaint(
-                              size: const Size(10, 10),
-                              painter: ShapeMarkerPainter(
-                                color: Color(int.parse(sintoma.color)),
-                                timeOfDay: sintoma.timeOfDay,
-                              ),
-                            );
-                          }).toList(),
+                      if (_symptoms.containsKey(key) || _medications.containsKey(key)) {
+                        final symptoms = _visibleMarkers.contains('symptoms') ? (_symptoms[key] ?? []) : [];
+                        final medications = _visibleMarkers.contains('medications') ? (_medications[key] ?? []) : [];
+                        final allItems = [...symptoms, ...medications];
+                        
+                        if (allItems.isEmpty) return null;  // No mostrar nada si no hay items visibles
+                        
+                        return Positioned(
+                          bottom: 1,
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 1.5,
+                            runSpacing: 1.5,
+                            children: allItems.take(6).map((dynamic item) {
+                              final timeOfDay = (item is Symptom || item is Medication) 
+                                ? item.timeOfDay 
+                                : 'allday';
+                              final color = (item is Symptom || item is Medication)
+                                ? Color(int.parse(item.color))
+                                : Colors.grey[600]!;
+                              return Container(
+                                width: 10,
+                                height: 10,
+                                child: Icon(
+                                  // Usar diferentes iconos según el tipo
+                                  item is Medication
+                                    ? (timeOfDay == 'morning' ? Icons.medication :
+                                       timeOfDay == 'afternoon' ? Icons.medication_liquid :
+                                       timeOfDay == 'night' ? Icons.medication :
+                                       Icons.medical_services)
+                                    : (timeOfDay == 'morning' ? Icons.wb_sunny_outlined :
+                                       timeOfDay == 'afternoon' ? Icons.wb_twilight :
+                                       timeOfDay == 'night' ? Icons.nightlight :
+                                       Icons.schedule),
+                                  size: 10,
+                                  color: color,
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         );
                       }
                       return null;
@@ -1195,6 +1322,7 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(
                       builder: (context) => StatisticsScreen(
                         symptoms: _symptoms,
+                        medications: _medications,
                         tags: _tags,
                         userName: widget.user.name,
                         user: widget.user,
@@ -1269,6 +1397,82 @@ class _HomePageState extends State<HomePage> {
         },
       );
     }
+  }
+
+  Widget _buildItemCard(dynamic item, DateTime day) {
+    final localizations = AppLocalizations.of(context)!;
+    final bool isMedication = item is Medication;
+    final itemColor = Color(int.parse(item.color));
+
+    return Card(
+      child: ListTile(
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTimeIcon(item.timeOfDay, size: 18, color: itemColor),
+            if (!isMedication) ...[
+              const SizedBox(width: 8),
+              _buildIntensityIcon(item.intensity),
+            ],
+          ],
+        ),
+        title: Text(item.description),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.tag),
+            if (isMedication) 
+              Text('${localizations.dose}: ${item.dose}'),
+          ],
+        ),
+        trailing: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              iconSize: 20,
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showNewSymptomDialog(
+                  day,
+                  item,
+                  item.description,
+                  item.timeOfDay,
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              iconSize: 20,
+              onPressed: () {
+                setState(() {
+                  final key = _dateToKey(day);
+                  if (isMedication) {
+                    _medications[key]?.removeWhere((m) => m.id == item.id);
+                    if (_medications[key]?.isEmpty ?? false) {
+                      _medications.remove(key);
+                    }
+                  } else {
+                    _symptoms[key]?.removeWhere((s) => s.id == item.id);
+                    if (_symptoms[key]?.isEmpty ?? false) {
+                      _symptoms.remove(key);
+                    }
+                  }
+                });
+                _saveData();
+                Navigator.of(context).pop();
+                _showSymptomsDialog(day);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
