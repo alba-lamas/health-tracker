@@ -1364,12 +1364,30 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         title: Text(item.description),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        subtitle: Row(
           children: [
-            Text(item.tag),
-            if (isMedication) 
-              Text('${localizations.dose}: ${item.dose}'),
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: itemColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.tag),
+                  if (isMedication) 
+                    Text(
+                      '${localizations.dose}: ${item.dose}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
         trailing: Column(
