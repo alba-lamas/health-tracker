@@ -1352,87 +1352,104 @@ class _HomePageState extends State<HomePage> {
     final itemColor = Color(int.parse(item.color));
 
     return Card(
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildTimeIcon(item.timeOfDay, size: 18, color: itemColor),
-            if (!isMedication) ...[
-              const SizedBox(width: 8),
-              _buildIntensityIcon(item.intensity),
-            ],
-          ],
-        ),
-        title: Text(item.description),
-        subtitle: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: itemColor,
-                shape: BoxShape.circle,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTimeIcon(item.timeOfDay, size: 18, color: itemColor),
+                if (!isMedication) ...[
+                  const SizedBox(height: 4),
+                  _buildIntensityIcon(item.intensity),
+                ],
+              ],
             ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(item.tag),
-                  if (isMedication) 
-                    Text(
-                      '${localizations.dose}: ${item.dose}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                  Text(item.description),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 4),
+                        decoration: BoxDecoration(
+                          color: itemColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Text(
+                        item.tag,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (isMedication) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '${localizations.dose}: ${item.dose}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              iconSize: 20,
-              onPressed: () {
-                Navigator.of(context).pop();
-                _showNewSymptomDialog(
-                  day,
-                  item,
-                  item.description,
-                  item.timeOfDay,
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              iconSize: 20,
-              onPressed: () {
-                setState(() {
-                  final key = _dateToKey(day);
-                  if (isMedication) {
-                    _medications[key]?.removeWhere((m) => m.id == item.id);
-                    if (_medications[key]?.isEmpty ?? false) {
-                      _medications.remove(key);
-                    }
-                  } else {
-                    _symptoms[key]?.removeWhere((s) => s.id == item.id);
-                    if (_symptoms[key]?.isEmpty ?? false) {
-                      _symptoms.remove(key);
-                    }
-                  }
-                });
-                _saveData();
-                Navigator.of(context).pop();
-                _showSymptomsDialog(day);
-              },
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: 20,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showNewSymptomDialog(
+                      day,
+                      item,
+                      item.description,
+                      item.timeOfDay,
+                    );
+                  },
+                ),
+                const SizedBox(height: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: 20,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    setState(() {
+                      final key = _dateToKey(day);
+                      if (isMedication) {
+                        _medications[key]?.removeWhere((m) => m.id == item.id);
+                        if (_medications[key]?.isEmpty ?? false) {
+                          _medications.remove(key);
+                        }
+                      } else {
+                        _symptoms[key]?.removeWhere((s) => s.id == item.id);
+                        if (_symptoms[key]?.isEmpty ?? false) {
+                          _symptoms.remove(key);
+                        }
+                      }
+                    });
+                    _saveData();
+                    Navigator.of(context).pop();
+                    _showSymptomsDialog(day);
+                  },
+                ),
+              ],
             ),
           ],
         ),
